@@ -47,69 +47,81 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext c) {
     final s = Expedition.of(c);
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 30),
-              Text('ASCEND', style: AppTypography.num(size: 34, color: AppColors.text)),
-              const SizedBox(height: 8),
-              Text(
-                'Registro de quem sobe. Rank, desnível e histórico ficam com você.',
-                style: AppTypography.body(size: 11),
-              ),
-              const SizedBox(height: 22),
-              Row(
+      backgroundColor: AppColors.bg,
+      body: Stack(
+        children: [
+          const KeyArtBackground(
+            opacity: .3,
+            alignment: Alignment(0, -0.8),
+            stops: [0, .4, .72, 1],
+            veilOpacities: [.62, .9, 1, 1],
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: _ModeTab(
-                      label: 'ENTRAR',
-                      active: !_signUp,
-                      onTap: () => setState(() => _signUp = false),
-                    ),
+                  const SizedBox(height: 30),
+                  Text('ASCEND', style: AppTypography.num(size: 34, color: AppColors.text)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Registro de quem sobe. Rank, desnível e histórico ficam com você.',
+                    style: AppTypography.body(size: 11),
                   ),
-                  const SizedBox(width: 2),
-                  Expanded(
-                    child: _ModeTab(
-                      label: 'CRIAR CONTA',
-                      active: _signUp,
-                      onTap: () => setState(() => _signUp = true),
-                    ),
+                  const SizedBox(height: 22),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _ModeTab(
+                          label: 'ENTRAR',
+                          active: !_signUp,
+                          onTap: () => setState(() => _signUp = false),
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        child: _ModeTab(
+                          label: 'CRIAR CONTA',
+                          active: _signUp,
+                          onTap: () => setState(() => _signUp = true),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  if (_signUp) ...[
+                    _AuthField(label: 'nome de campo', controller: _fieldName),
+                    const SizedBox(height: 10),
+                  ],
+                  _AuthField(
+                      label: 'e-mail', controller: _email, type: TextInputType.emailAddress),
+                  const SizedBox(height: 10),
+                  _AuthField(label: 'senha', controller: _password, obscure: true),
+                  if (_error != null) ...[
+                    const SizedBox(height: 10),
+                    Text(_error!, style: AppTypography.body(size: 10.5, color: AppColors.amber)),
+                  ],
+                  const SizedBox(height: 14),
+                  AppButton(
+                    s.authLoading
+                        ? 'UM MOMENTO…'
+                        : _signUp
+                            ? 'CRIAR E AVALIAR MEU NÍVEL'
+                            : 'ENTRAR NO CADERNO',
+                    onTap: s.authLoading ? null : () => _submit(s),
+                    primary: true,
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Ao entrar você concorda em manter suas informações de altitude e posição precisas — outras cordadas dependem disso.',
+                    style: AppTypography.body(size: 10, color: AppColors.dim),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-              if (_signUp) ...[
-                _AuthField(label: 'nome de campo', controller: _fieldName),
-                const SizedBox(height: 10),
-              ],
-              _AuthField(label: 'e-mail', controller: _email, type: TextInputType.emailAddress),
-              const SizedBox(height: 10),
-              _AuthField(label: 'senha', controller: _password, obscure: true),
-              if (_error != null) ...[
-                const SizedBox(height: 10),
-                Text(_error!, style: AppTypography.body(size: 10.5, color: AppColors.amber)),
-              ],
-              const SizedBox(height: 14),
-              AppButton(
-                s.authLoading
-                    ? 'UM MOMENTO…'
-                    : _signUp
-                        ? 'CRIAR E AVALIAR MEU NÍVEL'
-                        : 'ENTRAR NO CADERNO',
-                onTap: s.authLoading ? null : () => _submit(s),
-                primary: true,
-              ),
-              const Spacer(),
-              Text(
-                'Ao entrar você concorda em manter suas informações de altitude e posição precisas — outras cordadas dependem disso.',
-                style: AppTypography.body(size: 10, color: AppColors.dim),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

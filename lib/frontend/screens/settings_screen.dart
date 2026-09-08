@@ -46,7 +46,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 26),
             children: [
-              _EditField(label: 'NOME DE CAMPO', controller: _name),
+              AppPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const AppLabel('IDENTIFICAÇÃO', size: 9, tracking: 0.26),
+                    const SizedBox(height: 11),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const KeyArtPortrait(width: 64, height: 78),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _EditField(label: 'nome de campo', controller: _name),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 10),
               _EditField(label: 'BASE / REGIÃO', controller: _base),
               const SizedBox(height: 10),

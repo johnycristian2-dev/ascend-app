@@ -21,3 +21,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/art/keyart-limpa.png
+    - assets/art/emblema-alpha.png

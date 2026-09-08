@@ -119,6 +119,17 @@ propagação de decisão depende disso.
 `day1Min` é a **fonte única** de hora de chegada, margem de luz e veredito de
 equipamento. Não recalcule em outro lugar — foi o bug que já custou uma rodada.
 
+## Arte
+
+`assets/art/keyart-limpa.png` (ilustração de personagem) e `emblema-alpha.png`
+(marca) são as duas artes do protótipo que o app usa de verdade — as únicas
+referenciadas em `Ascend Expedição.dc.html` (`art/keyart.png`, `logo.png` e as
+variantes `-frio` ficaram de fora por não estarem em uso ali). `KeyArtBackground`
+(`lib/frontend/widgets/`) reproduz o fundo com véu gradiente da abertura, do
+acesso e da nova classificação — o "momento de arte" do app, o resto é
+instrumento sóbrio. `KeyArtPortrait` reproduz o recorte de rosto usado como
+retrato no caderno e nas configurações.
+
 ## O que é fiel e o que é aproximado
 
 Fiéis ao protótipo: paleta, tipografia, todos os números e textos de dados

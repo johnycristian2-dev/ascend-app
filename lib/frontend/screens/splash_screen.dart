@@ -39,23 +39,39 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext c) {
     final s = Expedition.of(c);
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('ASCEND', style: AppTypography.num(size: 46, color: AppColors.text)),
-              const SizedBox(height: 6),
-              const AppLabel('REGISTRO DE ALTITUDE', color: AppColors.dim, size: 10),
-              const SizedBox(height: 40),
-              AppProgressBar(s.bootPct / 100, color: AppColors.amber),
-              const SizedBox(height: 10),
-              AppLabel('CARREGANDO RELEVO · ${s.bootPct}%', color: AppColors.dim, size: 9),
-            ],
+      backgroundColor: AppColors.bg,
+      body: Stack(
+        children: [
+          const KeyArtBackground(
+            opacity: .55,
+            alignment: Alignment(0, -0.76),
+            stops: [0, .34, .78, 1],
+            veilOpacities: [.55, .2, .92, 1],
           ),
-        ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Image.asset('assets/art/emblema-alpha.png',
+                        width: 112, height: 112, fit: BoxFit.contain),
+                  ),
+                  const SizedBox(height: 20),
+                  Text('ASCEND', style: AppTypography.num(size: 46, color: AppColors.text)),
+                  const SizedBox(height: 6),
+                  const AppLabel('REGISTRO DE ALTITUDE', color: AppColors.dim, size: 10),
+                  const SizedBox(height: 40),
+                  AppProgressBar(s.bootPct / 100, color: AppColors.amber),
+                  const SizedBox(height: 10),
+                  AppLabel('CARREGANDO RELEVO · ${s.bootPct}%', color: AppColors.dim, size: 9),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
