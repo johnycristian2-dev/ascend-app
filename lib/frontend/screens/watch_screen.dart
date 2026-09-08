@@ -27,8 +27,8 @@ class WatchScreen extends StatelessWidget {
                   children: [
                     const AppLabel('ÚLTIMA POSIÇÃO CONHECIDA'),
                     const SizedBox(height: 12),
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Expanded(child: AppStat('ALTITUDE', '1 940 m')),
                         Expanded(child: AppStat('SUBIDA HOJE', '+820 m')),
                         Expanded(child: AppStat('ATUALIZADO', '08:26')),
@@ -41,16 +41,16 @@ class WatchScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              AppPanel(
+              const AppPanel(
                 bg: AppColors.surfaceAlt,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const AppLabel('MARCOS DO DIA', color: AppColors.text3, size: 9, tracking: 0.24),
-                    const SizedBox(height: 10),
-                    const TwoColumnRow('06:38', 'saída da portaria norte'),
-                    const TwoColumnRow('07:52', 'fonte do vale · água reposta'),
-                    const TwoColumnRow('08:26', 'crista leste · último sinal'),
+                    AppLabel('MARCOS DO DIA', color: AppColors.text3, size: 9, tracking: 0.24),
+                    SizedBox(height: 10),
+                    TwoColumnRow('06:38', 'saída da portaria norte'),
+                    TwoColumnRow('07:52', 'fonte do vale · água reposta'),
+                    TwoColumnRow('08:26', 'crista leste · último sinal'),
                   ],
                 ),
               ),

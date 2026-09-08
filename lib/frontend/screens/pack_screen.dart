@@ -48,12 +48,12 @@ class PackScreen extends StatelessWidget {
                       children: [
                         Text(fmtDec(kg), style: AppTypography.num(size: 44, color: ink)),
                         const SizedBox(width: 5),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 7),
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 7),
                           child: AppLabel('KG', color: AppColors.text2, size: 13),
                         ),
                         const Spacer(),
-                        AppLabel('LIMITE 12 KG', color: AppColors.dim, size: 8),
+                        const AppLabel('LIMITE 12 KG', color: AppColors.dim, size: 8),
                       ],
                     ),
                     const SizedBox(height: 11),
@@ -193,7 +193,7 @@ class _ItemRow extends StatelessWidget {
             ],
             if (fora && exigido) ...[
               const SizedBox(height: 7),
-              AppLabel('A PARTIDA ESCOLHIDA EXIGE ESTE ITEM',
+              const AppLabel('A PARTIDA ESCOLHIDA EXIGE ESTE ITEM',
                   color: AppColors.amber, size: 8, tracking: 0.14),
             ],
           ],

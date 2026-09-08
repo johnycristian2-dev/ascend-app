@@ -14,10 +14,10 @@ class RankUpScreen extends StatelessWidget {
     return Stack(
       children: [
         const KeyArtBackground(
-          opacity: .3,
+          opacity: .5,
           alignment: Alignment(0, -0.8),
-          stops: [0, .42, 1],
-          veilOpacities: [.75, .93, 1],
+          stops: [0, .3, .6, 1],
+          veilOpacities: [.35, .55, .88, 1],
         ),
         Column(
           children: [

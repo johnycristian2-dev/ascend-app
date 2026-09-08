@@ -68,12 +68,12 @@ class WindowScreen extends StatelessWidget {
                           .toList(),
                     ),
                     const SizedBox(height: 12),
-                    Row(
+                    const Row(
                       children: [
                         _Legend('BOM', AppColors.green),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         _Legend('MARGINAL', AppColors.blue),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         _Legend('RUIM', AppColors.amber),
                       ],
                     ),

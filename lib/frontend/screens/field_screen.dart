@@ -18,13 +18,13 @@ class FieldScreen extends StatelessWidget {
       color: const Color(0xFF0B0C0E),
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(18, 16, 18, 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const AppLabel('MODO CAMPO', color: AppColors.text3, size: 13, tracking: 0.26),
-                const AppLabel('GPS · OFFLINE', color: AppColors.amber, size: 13, tracking: 0.16),
+                AppLabel('MODO CAMPO', color: AppColors.text3, size: 13, tracking: 0.26),
+                AppLabel('GPS · OFFLINE', color: AppColors.amber, size: 13, tracking: 0.16),
               ],
             ),
           ),

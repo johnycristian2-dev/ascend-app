@@ -1,5 +1,7 @@
 /// Barrel: importe só este arquivo para ter acesso a todos os widgets
 /// básicos do design system (equivalente ao antigo `atoms.dart`).
+library;
+
 export 'app_label.dart';
 export 'app_panel.dart';
 export 'app_progress_bar.dart';

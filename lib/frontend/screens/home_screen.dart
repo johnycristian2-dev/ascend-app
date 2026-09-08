@@ -73,7 +73,7 @@ class HomeScreen extends StatelessWidget {
           child: Stack(
             children: [
               Positioned.fill(child: CustomPaint(painter: _RidgePainter())),
-              Positioned(
+              const Positioned(
                 left: 11,
                 top: 10,
                 child: AppLabel('PERFIL DO RELEVO · DIA 1',
