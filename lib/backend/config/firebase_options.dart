@@ -1,13 +1,15 @@
-// Config real do projeto `ascend-ff71d`, copiada do console do Firebase
-// (Configurações do projeto → Geral → Seus apps → app Web "ascend").
+// Config real do projeto `ascend-1d51e`, baixada com `firebase apps:sdkconfig`
+// (Configurações do projeto → Geral → Seus apps, no console do Firebase).
 //
-// Só o app Web foi registrado até agora — Android e iOS reaproveitam os
-// mesmos valores por enquanto (funciona para login por e-mail/senha e
-// Firestore, que é tudo que o app usa hoje). Antes de gerar um build
-// nativo de verdade para a loja, registre um app Android/iOS próprio no
-// console e rode `flutterfire configure` para gerar os arquivos nativos
-// (google-services.json / GoogleService-Info.plist) — passo a passo no
-// README.md.
+// A versão anterior deste arquivo apontava para um projeto diferente
+// (`ascend-ff71d`) que não tem o Cloud Firestore habilitado — Auth
+// funcionava (criava a conta), mas qualquer leitura/escrita no caderno
+// falhava com "Não foi possível entrar. Tente de novo.", porque o erro
+// do Firestore não é um FirebaseAuthException e cai no fallback genérico
+// de AuthService.friendlyMessage. `ascend-1d51e` é o projeto que consta
+// em `.firebaserc` e já tem Firestore (Native) criado e os apps Web,
+// Android e iOS registrados de verdade — por isso os três blocos abaixo
+// têm valores próprios, em vez de reaproveitar o app Web.
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
@@ -31,32 +33,32 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCGeDzazNhRZ9OOckzbLjYxzZL6FGkI6hk',
-    appId: '1:22520088791:web:2ebab1e607e9e7be924892',
-    messagingSenderId: '22520088791',
-    projectId: 'ascend-ff71d',
-    authDomain: 'ascend-ff71d.firebaseapp.com',
-    storageBucket: 'ascend-ff71d.firebasestorage.app',
-    measurementId: 'G-NMNHTZQ11Y',
+    apiKey: 'AIzaSyA5a5WcoptV1TLz48pBQVdiNDC18umW5e8',
+    appId: '1:109142925517:web:e5a8f64ad0f42aa470c984',
+    messagingSenderId: '109142925517',
+    projectId: 'ascend-1d51e',
+    authDomain: 'ascend-1d51e.firebaseapp.com',
+    databaseURL: 'https://ascend-1d51e-default-rtdb.firebaseio.com',
+    storageBucket: 'ascend-1d51e.firebasestorage.app',
+    measurementId: 'G-V6SCTK3PL0',
   );
 
-  // Reaproveita o app Web até você registrar um app Android próprio no
-  // console (Configurações do projeto → Seus apps → ícone Android).
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCGeDzazNhRZ9OOckzbLjYxzZL6FGkI6hk',
-    appId: '1:22520088791:web:2ebab1e607e9e7be924892',
-    messagingSenderId: '22520088791',
-    projectId: 'ascend-ff71d',
-    storageBucket: 'ascend-ff71d.firebasestorage.app',
+    apiKey: 'AIzaSyA8BX4gVL7_T9cPYZms3aTMiO6W4TKXSvQ',
+    appId: '1:109142925517:android:ed77a8e44c9eca9c70c984',
+    messagingSenderId: '109142925517',
+    projectId: 'ascend-1d51e',
+    databaseURL: 'https://ascend-1d51e-default-rtdb.firebaseio.com',
+    storageBucket: 'ascend-1d51e.firebasestorage.app',
   );
 
-  // Idem — reaproveita o app Web até você registrar um app iOS próprio.
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCGeDzazNhRZ9OOckzbLjYxzZL6FGkI6hk',
-    appId: '1:22520088791:web:2ebab1e607e9e7be924892',
-    messagingSenderId: '22520088791',
-    projectId: 'ascend-ff71d',
-    storageBucket: 'ascend-ff71d.firebasestorage.app',
-    iosBundleId: 'com.example.ascend',
+    apiKey: 'AIzaSyD019VCR0-sTmM7332k-tEvcNP6B8un_A8',
+    appId: '1:109142925517:ios:41a3c50e5e410fc870c984',
+    messagingSenderId: '109142925517',
+    projectId: 'ascend-1d51e',
+    databaseURL: 'https://ascend-1d51e-default-rtdb.firebaseio.com',
+    storageBucket: 'ascend-1d51e.firebasestorage.app',
+    iosBundleId: 'br.com.ascend.ascend',
   );
 }
