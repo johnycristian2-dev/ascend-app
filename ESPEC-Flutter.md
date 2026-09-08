@@ -31,7 +31,9 @@ Alvo do canvas: 390 × 844 (iPhone 14).
 Tipografia: **Barlow Condensed** para rótulos, títulos e números (peso 500–700, `letter-spacing` de .16em a .24em, quase sempre caixa alta); **Inter** para texto corrido (peso 400, 9–11px). Raio de canto: 4px em tudo. Números sempre com `FontFeature.tabularFigures()`.
 
 ```dart
-class Ink {
+// Implementado como AppColors em lib/frontend/theme/app_colors.dart
+// ("Ink" colidiria com o widget Ink do Material).
+class AppColors {
   static const bg = Color(0xFF14161A);
   static const surface = Color(0xFF1A1D21);
   static const border = Color(0xFF2E333A);
@@ -160,22 +162,31 @@ Números em pt-BR: vírgula decimal, espaço fino como separador de milhar (`1 6
 
 ---
 
-## 5. Estrutura de pastas sugerida
+## 5. Estrutura de pastas (implementada)
 
 ```
 lib/
-  main.dart
-  theme/          ink.dart, type.dart
-  state/          expedition_state.dart, calc.dart   <- seção 4 inteira
-  data/           wx_slots.dart, pack_items.dart, relay_notes.dart
-  screens/        splash, auth, onboard, home, route, discover, plan, party,
-                  window, pack, relay, watch, summary, rankup, profile,
-                  chat, inv, ach, history, settings
-  widgets/        label.dart, stat_card.dart, forecast_bars.dart,
-                  weight_bar.dart, relay_pin.dart, bottom_nav.dart
+  main.dart                     bootstrap: Firebase + runApp
+  backend/                      estado, dados e persistência — nada de Widget
+    config/       firebase_options.dart
+    state/        expedition_state.dart, expedition_calculator.dart  <- seção 4 inteira
+    models/       user_profile_model.dart, attr_model.dart
+    services/     auth_service.dart, profile_repository.dart
+    data/         weather_forecast.dart, relay_notes.dart, gear_catalog.dart
+  frontend/                      tema, widgets e telas — nada de Firebase
+    app.dart                    AscendApp, Shell, Expedition (InheritedNotifier)
+    theme/         app_colors.dart, app_typography.dart
+    widgets/       app_label.dart, app_panel.dart, app_button.dart, app_text_field.dart,
+                   screen_bar.dart, app_tag.dart, two_column_row.dart, app_progress_bar.dart,
+                   app_stat.dart, bottom_nav.dart, screen_index_button.dart
+    screens/       splash, auth, onboard, home, route, discover, plan, party,
+                   window, pack, relay, watch, summary, rankup, profile,
+                   chat, inventory, achievements, history, settings, field (*_screen.dart)
 ```
 
-`calc.dart` deve ser Dart puro, sem Flutter — assim dá para cobrir a seção 4 com testes unitários antes de qualquer UI. Comece por ele.
+`expedition_calculator.dart` é Dart puro, sem Flutter — assim dá para cobrir a seção 4 com
+testes unitários antes de qualquer UI. Comece por ele. `frontend/` pode importar de
+`backend/`; o inverso nunca acontece.
 
 ---
 

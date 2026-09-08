@@ -36,8 +36,8 @@ com dados de demonstração locais; é a próxima fatia de backend a fazer.
 - Firestore Database → Regras → cole o conteúdo de `firestore.rules` (na raiz
   deste projeto) → Publicar.
 
-**5. Ligar o app Flutter ao projeto** ✅ — `lib/firebase_options.dart` já tem
-os valores reais do app Web registrado no console. Funciona para rodar e
+**5. Ligar o app Flutter ao projeto** ✅ — `lib/backend/config/firebase_options.dart`
+já tem os valores reais do app Web registrado no console. Funciona para rodar e
 testar (`flutter run -d chrome` ou emulador Android/iOS).
 
 Antes de gerar um build de verdade pra loja (APK/IPA assinado), registre um
@@ -54,22 +54,45 @@ grava as edições; "SAIR DA CONTA" desloga de verdade.
 
 ## Estrutura
 
-| caminho | conteúdo |
-|---|---|
-| `lib/state/calc.dart` | Dart puro: peso, variantes de rota, day1Min, formatação |
-| `lib/state/expedition_state.dart` | estado global (`ChangeNotifier`), derivados e a ponte com o backend |
-| `lib/models/user_profile.dart` | o que persiste em `users/{uid}` no Firestore |
-| `lib/models/attr.dart` | um atributo físico (Resistência, Força…) |
-| `lib/services/auth_service.dart` | fina camada sobre o Firebase Auth |
-| `lib/services/profile_repository.dart` | fina camada sobre o Firestore (CRUD do perfil) |
-| `lib/firebase_options.dart` | config do Firebase — **placeholder**, veja "Backend" abaixo |
-| `firestore.rules` | regras de segurança do Firestore (cole no console) |
-| `lib/data/wx.dart` | blocos de previsão, 4 slots de partida, exigências |
-| `lib/data/relay.dart` | os 5 recados ancorados |
-| `lib/data/gear.dart` | equipamento com odômetro, e carimbos |
-| `lib/theme/` | paleta e tipografia |
-| `lib/widgets/` | Lbl, Panel, Stat, Btn, Field, ScreenBar, Tag, nav, índice |
-| `lib/screens/` | as 20 telas + `field.dart` (modo campo) |
+O código é dividido em dois ramos dentro de `lib/`: `backend/` (estado, dados,
+persistência — nada de `Widget`) e `frontend/` (tema, widgets e as 20 telas —
+nada de Firebase). `lib/main.dart` é só o bootstrap: inicializa o Firebase e
+chama `runApp`.
+
+```
+lib/
+  main.dart                              bootstrap: Firebase + runApp
+  backend/
+    config/firebase_options.dart         config do Firebase — placeholder, veja "Backend" acima
+    state/
+      expedition_state.dart              estado global (ChangeNotifier), derivados e ponte com o backend
+      expedition_calculator.dart         Dart puro: peso, variantes de rota, day1Min, formatação
+    models/
+      user_profile_model.dart            o que persiste em users/{uid} no Firestore
+      attr_model.dart                    um atributo físico (Resistência, Força…)
+    services/
+      auth_service.dart                  fina camada sobre o Firebase Auth
+      profile_repository.dart            fina camada sobre o Firestore (CRUD do perfil)
+    data/
+      weather_forecast.dart              blocos de previsão, 4 slots de partida, exigências
+      relay_notes.dart                   os 5 recados ancorados
+      gear_catalog.dart                  equipamento com odômetro, e carimbos
+  frontend/
+    app.dart                             AscendApp, Shell (troca de tela) e o InheritedNotifier Expedition
+    theme/
+      app_colors.dart                    paleta do protótipo
+      app_typography.dart                Barlow Condensed (rótulos/números) + Inter (corpo)
+    widgets/                             AppLabel, AppPanel, AppButton, AppTextField, ScreenBar,
+                                          AppTag, TwoColumnRow, AppProgressBar, AppStat, nav, índice
+                                          (import único: widgets/widgets.dart)
+    screens/                             as 20 telas (*_screen.dart) + field_screen.dart (modo campo)
+
+firestore.rules                          regras de segurança do Firestore (cole no console)
+```
+
+`frontend/` pode importar de `backend/` (uma tela lê o estado), mas nunca o
+contrário — nada em `backend/` depende de `Widget`, `BuildContext` ou de
+qualquer arquivo dentro de `frontend/`.
 
 ## As 20 telas
 
