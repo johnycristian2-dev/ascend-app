@@ -175,6 +175,29 @@ propagação de decisão depende disso.
 `day1Min` é a **fonte única** de hora de chegada, margem de luz e veredito de
 equipamento. Não recalcule em outro lugar — foi o bug que já custou uma rodada.
 
+## Diferenciais
+
+Ideias que partem do que o Ascend já tinha de mais único — a passagem de
+bastão — e do que a persistência recente deixou possível, em vez de
+inflar o app com feature genérica:
+
+- **Índice de confiança da rota** (`RouteTrust`, em
+  `expedition_calculator.dart`): agrega os 5 recados de bastão num único
+  número visível — "87% CONFIÁVEL · recado mais recente há 4 dias" — em
+  vez de deixar a informação escondida só no decaimento visual de cada
+  recado. Não é sistema novo, é o mesmo `fadeOpacity` de sempre, com peso
+  pelas confirmações históricas de cada recado (`conf`) e reagindo na
+  hora ao seu próprio voto na sessão: "ainda vale" zera os dias daquele
+  recado; "não achei" derruba a confiança dele pra 20%, incondicionalmente
+  — uma desconfirmação ao vivo pesa mais que qualquer curva de tempo.
+  Aparece na tela de rota (painel clicável, leva direto pros recados) e
+  como selo na própria tela de bastão. Com testes em
+  `expedition_calculator_test.dart`.
+- Próximos candidatos (ainda não implementados): conquistas geradas a
+  partir do que você realmente fez, em vez de `stampData` estático; um
+  orçamento de risco único juntando peso, clima e descompasso técnico;
+  uma foto-lembrança por expedição arquivada.
+
 ## Arte
 
 `assets/art/keyart-limpa.png` (ilustração de personagem) e `emblema-alpha.png`

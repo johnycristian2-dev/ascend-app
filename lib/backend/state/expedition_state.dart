@@ -137,6 +137,9 @@ class ExpeditionState extends ChangeNotifier {
   List<int> get relayDebts =>
       relayUsed.where((i) => relayVote[i] == null).toList()..sort();
 
+  /// Índice de confiança da rota — ver ESPEC-Flutter.md / calculator.
+  RouteTrust get routeTrust => computeRouteTrust(relayVote);
+
   /// Uso de uma peça pelo id do catálogo. Se ainda não foi sincronizado
   /// (conta anterior a este campo, ou perfil que nunca registrou essa
   /// peça), cai nos números de demonstração do próprio catálogo — em vez

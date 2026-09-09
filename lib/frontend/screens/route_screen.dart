@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app.dart';
+import '../../backend/data/relay_notes.dart';
 import '../../backend/state/expedition_calculator.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -14,6 +15,12 @@ class RouteScreen extends StatelessWidget {
     final s = Expedition.of(c);
     final core = s.core;
     final cond = condData[s.trail]!;
+    final trust = s.routeTrust;
+    final trustColor = trust.pct >= 80
+        ? AppColors.green
+        : trust.pct >= 50
+            ? AppColors.blue
+            : AppColors.amber;
     final delta = <String>[
       if (core.km > baseKm) '+${fmtDec(core.km - baseKm)} km',
       if (core.m > baseM) '+${core.m - baseM} m',
@@ -31,6 +38,34 @@ class RouteScreen extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 26),
             children: [
+              AppPanel(
+                onTap: () => s.go('relay'),
+                borderColor: trust.pct < 50 ? AppColors.borderWarn : AppColors.border,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const AppLabel('CONFIANÇA DA ROTA', size: 9, tracking: 0.26),
+                          const SizedBox(height: 6),
+                          Text(
+                            'recado mais recente há ${trust.freshestDias} dias · '
+                            'mais antigo há ${trust.stalestDias} dias',
+                            style: AppTypography.body(size: 9.5, color: AppColors.dim),
+                          ),
+                          const SizedBox(height: 3),
+                          Text('baseado nos ${relayData.length} recados de bastão ancorados aqui',
+                              style: AppTypography.body(size: 9, color: AppColors.dim)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text('${trust.pct}%', style: AppTypography.num(size: 32, color: trustColor)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
               AppPanel(
                 borderColor: core.conflicts.isEmpty ? AppColors.border : AppColors.borderWarn,
                 child: Column(

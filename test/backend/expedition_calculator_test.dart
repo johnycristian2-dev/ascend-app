@@ -107,6 +107,31 @@ void main() {
     });
   });
 
+  group('índice de confiança da rota', () {
+    test('sem votos, confiança reflete o decaimento natural dos recados', () {
+      final t = computeRouteTrust(const {});
+      expect(t.pct, greaterThanOrEqualTo(95));
+      expect(t.pct, lessThan(100));
+    });
+
+    test('freshestDias e stalestDias refletem os dias sem voto nenhum', () {
+      final t = computeRouteTrust(const {});
+      expect(t.freshestDias, 2);
+      expect(t.stalestDias, 60);
+    });
+
+    test('"não achei" no recado mais confirmado derruba bastante a confiança', () {
+      final base = computeRouteTrust(const {});
+      final comVoto = computeRouteTrust({4: 'n'});
+      expect(comVoto.pct, lessThan(base.pct - 30));
+    });
+
+    test('confirmar o recado mais velho pode levar a confiança a 100%', () {
+      final t = computeRouteTrust({2: 'y'});
+      expect(t.pct, 100);
+    });
+  });
+
   group('formatação', () {
     test('fmtDelta nunca produz "0 h 20"', () {
       expect(fmtDelta(20), '20 min');

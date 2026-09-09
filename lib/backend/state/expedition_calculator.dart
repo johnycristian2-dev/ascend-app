@@ -1,5 +1,7 @@
 // Dart puro — nenhum import de Flutter. Valores extraídos do protótipo.
 
+import '../data/relay_notes.dart';
+
 /// Condição real da rota. `minutes` é o tempo TOTAL de referência do trecho,
 /// não uma penalidade — entra cru no cálculo de day1Min.
 enum TrailState { seca, lama, neve, gelo }
@@ -189,3 +191,41 @@ const darkMin = 18 * 60 + 20;
 /// Chegada é escura se passa das 18:20 ou se a janela tem pouca luz.
 bool isDark(String arrive, int lightPct) =>
     arrive.compareTo('18:20') > 0 || lightPct < 60;
+
+// ------------------------------------------------- índice de confiança da rota
+
+/// Quanto ainda dá pra confiar nos recados de bastão ancorados na rota —
+/// um número só, agregando os 5 recados. Não é um sistema novo: reaproveita
+/// o mesmo decaimento de `RelayNote.fadeOpacity()` (fonte única, mesma
+/// regra do dia1Min) e pesa pelas confirmações históricas de cada recado —
+/// um recado confirmado por 41 pessoas pesa mais que um confirmado por 3.
+/// Um voto seu na sessão atual entra na hora: "ainda vale" zera os dias
+/// (recado fresco); "não achei" derruba a confiança daquele recado pra
+/// 20%, incondicionalmente — uma desconfirmação ao vivo pesa mais que
+/// qualquer curva de decaimento.
+class RouteTrust {
+  final int pct;
+  final int freshestDias;
+  final int stalestDias;
+  const RouteTrust(this.pct, this.freshestDias, this.stalestDias);
+}
+
+const _naoAcheiTrust = 0.2;
+
+RouteTrust computeRouteTrust(Map<int, String?> votes) {
+  var weightedSum = 0.0, weightTotal = 0.0;
+  var freshest = 1 << 30, stalest = 0;
+  for (var i = 0; i < relayData.length; i++) {
+    final n = relayData[i];
+    final v = votes[i];
+    final dias = v == 'y' ? 0 : n.diasDesdeConfirmacao;
+    final trust = v == 'n' ? _naoAcheiTrust : n.fadeOpacity(diasOverride: dias);
+    final weight = n.conf.toDouble();
+    weightedSum += trust * weight;
+    weightTotal += weight;
+    if (dias < freshest) freshest = dias;
+    if (dias > stalest) stalest = dias;
+  }
+  final pct = weightTotal == 0 ? 100 : (weightedSum / weightTotal * 100).round();
+  return RouteTrust(pct, freshest, stalest);
+}

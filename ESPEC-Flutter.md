@@ -124,6 +124,8 @@ Limiares: verde até 10,8 kg, azul até 12 kg, **acima de 12 kg** vira alerta â
 
 Cinco recados ancorados em km da rota, com autor, rank, idade, contagem de confirmações e sinalizador `stale` (>4 meses fica esmaecido a 66% de opacidade e com anel cinza). Voto: "ainda vale" (+1 confirmação) ou "não achei". Ambos alternáveis.
 
+**Índice de confiança da rota** (`computeRouteTrust`, implementado): agrega os 5 recados num número só — média de `RelayNote.fadeOpacity()` ponderada pela contagem de confirmações (`conf`) de cada recado, reagindo ao voto da sessão atual ("ainda vale" zera os dias daquele recado; "não achei" fixa a confiança dele em 20%, incondicionalmente). Não duplica o decaimento — chama o mesmo `fadeOpacity` que a tela de bastão já usa.
+
 ### 4.4 Cadeia de cálculo — implemente nesta ordem
 
 ```

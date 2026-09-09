@@ -16,6 +16,7 @@ class RelayScreen extends StatelessWidget {
       children: [
         ScreenBar('PASSAGEM DE BASTÃO',
             sub: '${s.relayCount} recados deixados nesta rota',
+            trailing: '${s.routeTrust.pct}% CONFIÁVEL',
             onBack: () => s.go('home')),
         Expanded(
           child: ListView(
