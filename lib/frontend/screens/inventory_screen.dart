@@ -22,9 +22,10 @@ class InventoryScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 26),
             children: gearData.map((g) {
               final sel = s.gearSel == g.id;
-              final ink = g.wear > 65
+              final usage = s.gearUsage(g.id);
+              final ink = usage.wear > 65
                   ? AppColors.amber
-                  : g.wear > 40
+                  : usage.wear > 40
                       ? AppColors.blue
                       : AppColors.green;
               return Padding(
@@ -55,13 +56,13 @@ class InventoryScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          AppLabel('DESGASTE ${g.wear}%', color: AppColors.dim, size: 9),
-                          Text('${g.od} / ${g.lim} ${g.unit}',
+                          AppLabel('DESGASTE ${usage.wear}%', color: AppColors.dim, size: 9),
+                          Text('${usage.od} / ${g.lim} ${g.unit}',
                               style: AppTypography.num(size: 12, color: AppColors.text2, weight: FontWeight.w500)),
                         ],
                       ),
                       const SizedBox(height: 7),
-                      AppProgressBar(g.wear / 100, color: ink),
+                      AppProgressBar(usage.wear / 100, color: ink),
                       if (sel) ...[
                         const SizedBox(height: 12),
                         Text(g.wearNote, style: AppTypography.body(size: 10)),
@@ -69,8 +70,10 @@ class InventoryScreen extends StatelessWidget {
                         TwoColumnRow('MANUTENÇÃO', g.svc,
                             ink: g.svc == 'em dia' ? AppColors.green : AppColors.amber),
                         TwoColumnRow('PRÓXIMA', g.svcAt),
-                        TwoColumnRow('SAÍDAS', '${g.uses}'),
+                        TwoColumnRow('SAÍDAS', '${usage.uses}'),
                         TwoColumnRow('PESO', '${g.kg} kg'),
+                        const SizedBox(height: 10),
+                        AppButton('REGISTRAR SAÍDA', onTap: () => s.logGearOuting(g.id)),
                       ],
                     ],
                   ),

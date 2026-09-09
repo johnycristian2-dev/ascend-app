@@ -21,12 +21,24 @@ flutter run
 
 Autenticação, o caderno de expedição (perfil), o circuito de decisão
 (mochila, partida escolhida, votos e dívidas de bastão), o plano de
-expedição, a convocação de cordada e o chat agora são reais — Firebase
-Auth + Firestore. Só a contagem regressiva da janela (`wxSec` — um número
-decrescendo a partir de uma constante, não ancorado num horário real; persistir
-isso direito pediria guardar o horário-alvo, não o segundo atual) e o
-equipamento (`gear_catalog.dart` — sem nenhuma interação que mude
-desgaste/uso ainda) continuam locais.
+expedição, a convocação de cordada, o chat e o equipamento agora são
+reais — Firebase Auth + Firestore. Só a contagem regressiva da janela
+(`wxSec` — um número decrescendo a partir de uma constante, não ancorado
+num horário real; persistir isso direito pediria guardar o horário-alvo,
+não o segundo atual) continua local.
+
+**Equipamento é o caso especial:** ao contrário do resto, não existia
+nenhuma interação que mudasse desgaste/uso — os números do catálogo
+(`gear_catalog.dart`) eram só conteúdo estático de demonstração. Adicionei
+"REGISTRAR SAÍDA" na tela (`InventoryScreen`), que soma 1 uso, avança o
+odômetro e soma 2 pontos de desgaste (`GearUsage.logOuting`, em
+`gear_usage_model.dart`) — uma aproximação simples, documentada no código,
+não derivada de odômetro/limite porque os dados de demonstração já não
+seguiam essa proporção de propósito (cada peça desgasta em ritmo próprio:
+a corda por uso intenso, a barraca por sazonalidade). Ajuste a fórmula se
+quiser outro ritmo. Uma conta nova começa com equipamento zerado; a conta
+que já existia (johnycristian2) mantém os números atuais até a primeira
+saída registrada.
 
 **1. Projeto criado** ✅ — `ascend-1d51e`, na conta johnycristian2@gmail.com.
 
@@ -65,12 +77,12 @@ verdade.
 
 Cada ação de decisão (marcar/desmarcar item da mochila, escolher partida,
 votar num recado, convocar alguém, marcar quem leva o quê, escolher trilha/
-data, mandar mensagem) grava no Firestore na hora — silencioso, sem travar
-a navegação se a rede cair (a escrita fica enfileirada e sincroniza quando
-voltar). Selecionar um item pra ver detalhe (recado, recado de bastão em
-campo, peça de equipamento, carimbo) e o que ainda está sendo digitado
-(rascunho de recado/mensagem) são estado de tela, não decisão — não
-persistem, e não deveriam.
+data, mandar mensagem, registrar saída de equipamento) grava no Firestore
+na hora — silencioso, sem travar a navegação se a rede cair (a escrita fica
+enfileirada e sincroniza quando voltar). Selecionar um item pra ver detalhe
+(recado, recado de bastão em campo, peça de equipamento, carimbo) e o que
+ainda está sendo digitado (rascunho de recado/mensagem) são estado de
+tela, não decisão — não persistem, e não deveriam.
 
 ## Estrutura
 
@@ -89,9 +101,10 @@ lib/
       expedition_calculator.dart         Dart puro: peso, variantes de rota, day1Min, formatação
     models/
       user_profile_model.dart            o que persiste em users/{uid} no Firestore
-                                          (perfil + mochila + janela + bastão + plano + cordada + chat)
+                                          (perfil + mochila + janela + bastão + plano + cordada + chat + equip.)
       attr_model.dart                    um atributo físico (Resistência, Força…)
       chat_message_model.dart            uma mensagem da cordada
+      gear_usage_model.dart              uso/desgaste registrado de uma peça (GearUsage.logOuting)
     services/
       auth_service.dart                  fina camada sobre o Firebase Auth
       profile_repository.dart            fina camada sobre o Firestore (CRUD do perfil)

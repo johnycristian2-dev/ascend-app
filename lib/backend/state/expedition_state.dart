@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import '../data/gear_catalog.dart';
 import '../data/relay_notes.dart';
 import '../data/weather_forecast.dart';
 import '../models/attr_model.dart';
 import '../models/chat_message_model.dart';
+import '../models/gear_usage_model.dart';
 import '../models/user_profile_model.dart';
 import '../services/auth_service.dart';
 import '../services/profile_repository.dart';
@@ -10,6 +12,7 @@ import 'expedition_calculator.dart';
 
 export '../models/attr_model.dart' show Attr;
 export '../models/chat_message_model.dart' show Msg;
+export '../models/gear_usage_model.dart' show GearUsage;
 
 const ranks = ['E', 'D', 'C', 'B', 'A', 'S'];
 
@@ -71,6 +74,10 @@ class ExpeditionState extends ChangeNotifier {
   bool cheered = false;
   String draft = '';
 
+  /// Uso registrado por peça de equipamento (chave = GearItem.id). Vazio
+  /// até a primeira sincronização — ver [gearUsage].
+  final Map<String, GearUsage> gear = {};
+
   /// Modo campo: tela cheia de instrumento, acessível a partir do mapa.
   bool fieldMode = false;
 
@@ -120,6 +127,17 @@ class ExpeditionState extends ChangeNotifier {
   /// O app cobra essa confirmação antes de deixar arquivar o registro.
   List<int> get relayDebts =>
       relayUsed.where((i) => relayVote[i] == null).toList()..sort();
+
+  /// Uso de uma peça pelo id do catálogo. Se ainda não foi sincronizado
+  /// (conta anterior a este campo, ou perfil que nunca registrou essa
+  /// peça), cai nos números de demonstração do próprio catálogo — em vez
+  /// de mostrar equipamento "novo em folha" pra quem já via outro valor.
+  GearUsage gearUsage(String id) {
+    final logged = gear[id];
+    if (logged != null) return logged;
+    final cat = gearData.firstWhere((g) => g.id == id);
+    return GearUsage(uses: cat.uses, wear: cat.wear, od: cat.od);
+  }
 
   // -------------------------------------------------------------- comandos
 
@@ -215,6 +233,9 @@ class ExpeditionState extends ChangeNotifier {
       ..clear()
       ..addAll(p.checked);
     msgs = p.msgs;
+    gear
+      ..clear()
+      ..addAll(p.gear);
   }
 
   /// Grava o essencial do caderno no Firestore. Silencioso de propósito —
@@ -244,6 +265,7 @@ class ExpeditionState extends ChangeNotifier {
       'invited': invited,
       'checked': checked,
       'msgs': msgs.map((m) => m.toMap()).toList(),
+      'gear': gear.map((k, v) => MapEntry(k, v.toMap())),
     }).catchError((_) {});
   }
 
@@ -397,6 +419,15 @@ class ExpeditionState extends ChangeNotifier {
   }
   void openStamp(int? i) { stampIdx = stampIdx == i ? null : i; notifyListeners(); }
   void selectGear(String? id) { gearSel = gearSel == id ? null : id; notifyListeners(); }
+
+  /// "REGISTRAR SAÍDA" na tela de equipamento — a única ação que muda
+  /// uso/desgaste hoje (ver GearUsage.logOuting).
+  void logGearOuting(String id) {
+    final unit = gearData.firstWhere((g) => g.id == id).unit;
+    gear[id] = gearUsage(id).logOuting(unit);
+    _syncProfile();
+    notifyListeners();
+  }
   void cheer() { cheered = !cheered; notifyListeners(); }
   void setDraft(String v) { draft = v; notifyListeners(); }
 

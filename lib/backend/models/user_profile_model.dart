@@ -1,5 +1,7 @@
+import '../data/gear_catalog.dart';
 import 'attr_model.dart';
 import 'chat_message_model.dart';
+import 'gear_usage_model.dart';
 
 /// Conversa inicial de toda cordada recém-formada — a mesma que o
 /// protótipo sempre mostrou. Flavor, não uma decisão do usuário: por
@@ -14,9 +16,8 @@ const seedMsgs = <Msg>[
 /// O que persiste no Firestore em `users/{uid}` — o caderno de expedição
 /// de verdade, não mais mockado em memória.
 ///
-/// Só a janela em contagem regressiva e o equipamento (sem nenhuma
-/// interação que o altere ainda) continuam puramente locais — o resto
-/// do circuito de decisão e da cordada já persiste.
+/// Só a janela em contagem regressiva continua puramente local — o resto
+/// do circuito de decisão, da cordada e do equipamento já persiste.
 class UserProfile {
   final String uid;
   final String name;
@@ -54,6 +55,11 @@ class UserProfile {
   /// Histórico da conversa da cordada.
   final List<Msg> msgs;
 
+  /// Uso registrado de cada peça de equipamento, por id do catálogo
+  /// (`GearItem.id`, em gear_catalog.dart). Ausente = conta anterior a
+  /// este campo — ver `ExpeditionState.gearUsage`.
+  final Map<String, GearUsage> gear;
+
   const UserProfile({
     required this.uid,
     required this.name,
@@ -73,13 +79,15 @@ class UserProfile {
     this.invited = const {},
     this.checked = const {},
     this.msgs = seedMsgs,
+    this.gear = const {},
   });
 
   /// Perfil inicial de quem acabou de se cadastrar — nível 1, desnível
   /// zerado, atributos de base, nada decidido ainda na mochila, janela,
-  /// bastão, plano ou cordada (só a conversa inicial, que é cenário, não
-  /// decisão). O rank de partida vem da avaliação inicial (onboarding),
-  /// não deste construtor.
+  /// bastão, plano, cordada (só a conversa inicial, que é cenário, não
+  /// decisão) ou equipamento (peças zeradas — novas em folha, ninguém
+  /// registrou uma saída ainda). O rank de partida vem da avaliação
+  /// inicial (onboarding), não deste construtor.
   factory UserProfile.starter({
     required String uid,
     required String name,
@@ -100,6 +108,7 @@ class UserProfile {
           Attr('TÉCNICA', 20),
           Attr('ALTITUDE', 20),
         ],
+        gear: {for (final g in gearData) g.id: const GearUsage()},
       );
 
   UserProfile copyWith({
@@ -120,6 +129,7 @@ class UserProfile {
     Map<String, bool>? invited,
     Map<String, bool>? checked,
     List<Msg>? msgs,
+    Map<String, GearUsage>? gear,
   }) =>
       UserProfile(
         uid: uid,
@@ -140,6 +150,7 @@ class UserProfile {
         invited: invited ?? this.invited,
         checked: checked ?? this.checked,
         msgs: msgs ?? this.msgs,
+        gear: gear ?? this.gear,
       );
 
   Map<String, dynamic> toMap() => {
@@ -160,6 +171,7 @@ class UserProfile {
         'invited': invited,
         'checked': checked,
         'msgs': msgs.map((m) => m.toMap()).toList(),
+        'gear': gear.map((k, v) => MapEntry(k, v.toMap())),
       };
 
   factory UserProfile.fromMap(String uid, Map<String, dynamic> m) => UserProfile(
@@ -193,5 +205,9 @@ class UserProfile {
                 ?.map((e) => Msg.fromMap(Map<String, dynamic>.from(e as Map)))
                 .toList() ??
             seedMsgs,
+        gear: (m['gear'] as Map?)?.map(
+              (k, v) => MapEntry(k as String, GearUsage.fromMap(Map<String, dynamic>.from(v as Map))),
+            ) ??
+            const {},
       );
 }
