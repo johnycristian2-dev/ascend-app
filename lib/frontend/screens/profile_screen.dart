@@ -1,9 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../app.dart';
 import '../../backend/state/expedition_calculator.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/widgets.dart';
+
+/// Monta o link de uma rede a partir do que a pessoa digitou em Ajustes.
+/// Se já parece uma URL (começa com http:// ou https://), usa direto —
+/// senão, tira um '@' inicial (comum em handle) e monta a URL padrão da
+/// rede. Puro Dart, sem Flutter: dá pra testar sem widget nenhum.
+Uri? socialLinkUri(String platform, String raw) {
+  final v = raw.trim();
+  if (v.isEmpty) return null;
+  if (v.startsWith('http://') || v.startsWith('https://')) return Uri.tryParse(v);
+  final handle = v.startsWith('@') ? v.substring(1) : v;
+  return switch (platform) {
+    'instagram' => Uri.tryParse('https://instagram.com/$handle'),
+    'strava' => Uri.tryParse('https://strava.com/$handle'),
+    'youtube' => Uri.tryParse('https://youtube.com/$handle'),
+    'website' => Uri.tryParse('https://$v'),
+    _ => null,
+  };
+}
 
 /// Caderno: identidade pública, rank, atributos e a meta de desnível
 /// da temporada.
@@ -16,6 +35,15 @@ class ProfileScreen extends StatelessWidget {
     'youtube': Icons.smart_display_outlined,
     'website': Icons.language,
   };
+
+  Future<void> _openSocial(BuildContext c, String platform, String raw) async {
+    final uri = socialLinkUri(platform, raw);
+    if (uri == null) return;
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && c.mounted) {
+      ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: Text('Não deu para abrir $raw')));
+    }
+  }
 
   @override
   Widget build(BuildContext c) {
@@ -78,21 +106,25 @@ class ProfileScreen extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: socials
-                .map((e) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceAlt,
-                        border: Border.all(color: AppColors.border),
-                        borderRadius: r4,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(e.value, size: 12, color: AppColors.text2),
-                          const SizedBox(width: 6),
-                          Text(s.socialLinks[e.key]!,
-                              style: AppTypography.body(size: 10, color: AppColors.text2)),
-                        ],
+                .map((e) => InkWell(
+                      onTap: () => _openSocial(c, e.key, s.socialLinks[e.key]!),
+                      borderRadius: r4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceAlt,
+                          border: Border.all(color: AppColors.border),
+                          borderRadius: r4,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(e.value, size: 12, color: AppColors.text2),
+                            const SizedBox(width: 6),
+                            Text(s.socialLinks[e.key]!,
+                                style: AppTypography.body(size: 10, color: AppColors.text2)),
+                          ],
+                        ),
                       ),
                     ))
                 .toList(),

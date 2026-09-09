@@ -49,10 +49,14 @@ arquivo nenhum, só o endereço de uma imagem já hospedada em outro lugar —
 sem isso não precisa de Firebase Storage, de pacote de câmera/galeria, nem
 de permissão nativa nenhuma. Sem link definido, usa a key art do app como
 retrato/fundo padrão (`ProfileAvatar`/`ProfileCover`, em
-`lib/frontend/widgets/`). Redes sociais aparecem como chip com ícone e
-identificador — não são link clicável ainda; isso pediria o pacote
-`url_launcher` e configuração nativa (Android/iOS) que não dá pra testar
-sem o SDK aqui.
+`lib/frontend/widgets/`). Redes sociais são clicáveis (`url_launcher`,
+`socialLinkUri` em `profile_screen.dart` monta a URL a partir do que a
+pessoa digitou — handle com ou sem @, ou já uma URL completa). Só usa
+`https://`, então não precisa de `<queries>` no AndroidManifest nem de
+`LSApplicationQueriesSchemes` no Info.plist (só entram em jogo pra
+esquema de URL customizado, tipo abrir o app do Instagram direto — aqui
+sempre abre no navegador). Rode `flutter pub get` depois de puxar esta
+mudança pra buscar o pacote novo.
 
 **1. Projeto criado** ✅ — `ascend-1d51e`, na conta johnycristian2@gmail.com.
 
