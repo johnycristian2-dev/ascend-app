@@ -134,6 +134,7 @@ lib/
       relay_notes.dart                   os 5 recados ancorados
       gear_catalog.dart                  equipamento com odômetro, e carimbos (stampData)
       achievement_catalog.dart           conquistas desbloqueáveis por ação real (ver Diferenciais)
+      sos_contacts.dart                  os 3 destinatários da tela de SOS
   frontend/
     app.dart                             AscendApp, Shell (troca de tela) e o InheritedNotifier Expedition
     theme/
@@ -145,6 +146,7 @@ lib/
                                           fallback pra key art), KeyArtBackground, KeyArtPortrait
                                           (import único: widgets/widgets.dart)
     screens/                             as 20 telas (*_screen.dart) + field_screen.dart (modo campo)
+                                          + sos_screen.dart (emergência, sobreposição do modo campo)
 
 firestore.rules                          regras de segurança do Firestore (cole no console)
 ```
@@ -169,6 +171,21 @@ fluxo — é uma sobreposição acessível pelo ícone de relevo no topo do mapa
 exatamente como no protótipo (não entra no mapa `depth`). É de lá, não da
 tela de leitura em casa, que um recado de bastão nasce: "ANCORAR RECADO"
 abre o mesmo composer da tela `relay`, ancorado no ponto onde você está.
+
+**SOS** (`SosScreen`, `ExpeditionState.sosOpen`) existia no protótipo
+original e nas conversas de design, mas ficou de fora do `ESPEC-Flutter.md`
+que guiou esta reconstrução — não é implementação nova, é reparar um gap.
+Mesmo padrão do modo campo (sobreposição, não entra no `depth`), aberto
+pelo botão SOS dentro do modo campo, e fica por cima até dele na pilha.
+Mostra posição, altitude e os 3 destinatários do protótipo
+(`sos_contacts.dart`), com o gesto de "manter pressionado 3 s" pra
+"transmitir". **É só interface — igual ao resto dos dados de demonstração
+do app (clima, cordada, recados), nenhum alerta é enviado de verdade.**
+Antes de tratar isso como recurso de segurança real, precisaria de:
+localização de verdade (permissão nativa), um jeito real de despachar
+SMS/satélite/rádio (nenhum provedor está integrado), e transmissão em
+segundo plano mesmo com o app fechado — nada disso dá pra fazer sem SDK
+do Flutter pra testar, e é sensível demais pra fingir que funciona.
 
 ## Duas regras que não podem se perder
 
@@ -235,6 +252,30 @@ Aproximados: o mapa de relevo (silhueta desenhada, no lugar do mapa real), os
 ícones (Material em vez dos SVGs desenhados à mão) e o layout fino de algumas
 telas secundárias. As telas do circuito de decisão — home, route, window, pack,
 relay — são as mais próximas.
+
+## Gaps entre o protótipo original e esta reconstrução
+
+`ESPEC-Flutter.md`, o mapa que guiou a reconstrução Flutter, não cobriu
+tudo que o protótipo `.dc.html` original tinha — não por decisão, por
+omissão. Conferido direto no HTML e nas conversas de design
+(`chats/chat1.md`) quando alguém notou a falta:
+
+- **SOS** ✅ agora implementado (ver "As 20 telas" acima) — não estava em
+  nenhuma tela nem no ESPEC.
+- **Diário de bordo** (`openLog`/`MARCAR` no modo campo do protótipo:
+  nota de texto ou de voz por segmento, reaparece no resumo e na folha do
+  carimbo) — ainda não implementado. A parte de texto é factível do jeito
+  que fiz o resto; nota de **voz** precisaria gravar áudio de verdade
+  (pacote de microfone, permissão nativa), do mesmo tipo de risco que já
+  adiei pra foto de perfil.
+- **Rádio** (`openRadio`, ouvir transmissões da cordada no modo campo) —
+  não implementado.
+- As 4 preferências reais de Ajustes do protótipo (alerta automático de
+  SOS, compartilhar posição, mapas offline, notas de voz por segmento)
+  viraram, na reconstrução, um painel "PRIVACIDADE" com conteúdo
+  diferente (texto estático sobre visibilidade de posição) — não é bug,
+  é uma tela que pegou outro rumo, mas vale saber que diverge do
+  protótipo original.
 
 ## As três pendências (agora implementadas)
 

@@ -26,6 +26,7 @@ import 'screens/settings_screen.dart';
 import 'screens/summary_screen.dart';
 import 'screens/rankup_screen.dart';
 import 'screens/field_screen.dart';
+import 'screens/sos_screen.dart';
 
 /// Tela de erro amigável quando `firebase_options.dart` ainda é o placeholder
 /// (ou o Firebase não foi configurado direito) — em vez de a tela branca
@@ -182,10 +183,13 @@ class Shell extends StatelessWidget {
             // Modo campo é uma sobreposição, não uma tela do fluxo normal —
             // como no protótipo (não entra no mapa `depth`/`go`).
             if (s.fieldMode) const Positioned.fill(child: FieldScreen()),
+            // SOS fica por cima até do modo campo — de onde normalmente é aberto.
+            if (s.sosOpen) const Positioned.fill(child: SosScreen()),
           ],
         ),
       ),
-      floatingActionButton: chrome && !s.fieldMode ? const ScreenIndexButton() : null,
+      floatingActionButton:
+          chrome && !s.fieldMode && !s.sosOpen ? const ScreenIndexButton() : null,
     );
   }
 }

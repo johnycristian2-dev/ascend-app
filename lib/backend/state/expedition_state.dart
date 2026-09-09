@@ -93,6 +93,12 @@ class ExpeditionState extends ChangeNotifier {
   /// Modo campo: tela cheia de instrumento, acessível a partir do mapa.
   bool fieldMode = false;
 
+  /// SOS: sobreposição de emergência, acessível a partir do modo campo —
+  /// como `fieldMode`, não é uma tela do fluxo normal (não entra no mapa
+  /// `depth`). Fica por cima até de `fieldMode` na pilha (ver app.dart).
+  bool sosOpen = false;
+  bool sosSent = false;
+
   /// Índices de recados de bastão que você abriu durante a expedição —
   /// a dívida de confirmação cobra a volta só de quem foi de fato usado.
   final Set<int> relayUsed = {};
@@ -407,6 +413,13 @@ class ExpeditionState extends ChangeNotifier {
   /// Modo campo é uma sobreposição, não uma tela do fluxo — como no protótipo.
   void enterField() { fieldMode = true; notifyListeners(); }
   void exitField() { fieldMode = false; notifyListeners(); }
+
+  void openSos() { sosOpen = true; sosSent = false; notifyListeners(); }
+  void closeSos() { sosOpen = false; sosSent = false; notifyListeners(); }
+
+  /// Chamado quando o gesto de "manter pressionado" completa 3 s. Não
+  /// dispara nada de verdade — ver aviso na própria tela de SOS.
+  void confirmSos() { sosSent = true; notifyListeners(); }
 
   void toggleCarry(String nome) {
     packOut.contains(nome) ? packOut.remove(nome) : packOut.add(nome);

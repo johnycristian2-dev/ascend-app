@@ -63,6 +63,8 @@ O protótipo usa um `depth` por tela para escolher a direção da animação (en
 
 Barra inferior: `home` | `chat` | `profile`. Telas de depth ≥2 mantêm a aba raiz destacada (`route`/`discover`/`plan`/`window`/`pack`/`relay` → home; `rankup`/`summary`/`settings`/`history` → profile).
 
+Duas sobreposições ficam **fora** desse mapa (não usam `depth`/`go`, não entram na barra inferior): o modo campo (`fieldMode`) e o SOS (`sosOpen`), aberto de dentro do modo campo e empilhado por cima dele. O SOS existia no protótipo original (`sosOpen`/`openSos`/`closeSos` no `.dc.html`) mas esta lista de 20 telas, escrita antes de eu revisar o protótipo com atenção, não o incluiu — é um gap desta especificação, não do protótipo.
+
 ---
 
 ## 3. Modelo de estado
