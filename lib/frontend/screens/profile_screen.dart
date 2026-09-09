@@ -5,20 +5,40 @@ import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/widgets.dart';
 
-/// Caderno: rank, atributos e a meta de desnível da temporada.
+/// Caderno: identidade pública, rank, atributos e a meta de desnível
+/// da temporada.
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  static const _socialIcons = {
+    'instagram': Icons.camera_alt_outlined,
+    'strava': Icons.directions_run,
+    'youtube': Icons.smart_display_outlined,
+    'website': Icons.language,
+  };
 
   @override
   Widget build(BuildContext c) {
     final s = Expedition.of(c);
+    final socials = _socialIcons.entries.where((e) => (s.socialLinks[e.key] ?? '').isNotEmpty);
+    final about = <(String, String)>[
+      if (s.practicingSince.isNotEmpty) ('PRATICANDO DESDE', s.practicingSince),
+      if (s.dreamTrail.isNotEmpty) ('TRILHA DOS SONHOS', s.dreamTrail),
+      if (s.favoriteGear.isNotEmpty) ('EQUIPAMENTO FAVORITO', s.favoriteGear),
+    ];
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 26),
       children: [
+        ClipRRect(
+          borderRadius: r4,
+          child: ProfileCover(coverUrl: s.coverUrl),
+        ),
+        const SizedBox(height: 14),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const KeyArtPortrait(),
+            ProfileAvatar(photoUrl: s.photoUrl),
             const SizedBox(width: 13),
             Expanded(
               child: Column(
@@ -48,6 +68,36 @@ class ProfileScreen extends StatelessWidget {
             ),
           ],
         ),
+        if (s.bio.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(s.bio, style: AppTypography.body(size: 11, height: 1.5)),
+        ],
+        if (socials.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: socials
+                .map((e) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceAlt,
+                        border: Border.all(color: AppColors.border),
+                        borderRadius: r4,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(e.value, size: 12, color: AppColors.text2),
+                          const SizedBox(width: 6),
+                          Text(s.socialLinks[e.key]!,
+                              style: AppTypography.body(size: 10, color: AppColors.text2)),
+                        ],
+                      ),
+                    ))
+                .toList(),
+          ),
+        ],
         const SizedBox(height: 14),
         AppPanel(
           child: Column(
@@ -111,6 +161,19 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
         ),
+        if (about.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          AppPanel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const AppLabel('SOBRE'),
+                const SizedBox(height: 6),
+                for (final a in about) TwoColumnRow(a.$1, a.$2),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 10),
         Row(
           children: [

@@ -60,6 +60,28 @@ class UserProfile {
   /// este campo — ver `ExpeditionState.gearUsage`.
   final Map<String, GearUsage> gear;
 
+  // ------------------------------------------------------- identidade pública
+
+  /// URL de uma imagem já hospedada em outro lugar — o app não faz
+  /// upload de arquivo, só aponta pra ela. Vazio = usa o retrato/key art
+  /// padrão (ver KeyArtPortrait, KeyArtBackground).
+  final String photoUrl;
+  final String coverUrl;
+
+  final String bio;
+
+  /// Redes vinculadas, por chave fixa -> identificador (@usuário ou URL,
+  /// como a pessoa preferir digitar). Chaves usadas pela UI:
+  /// 'instagram', 'strava', 'youtube', 'website'. Uma chave ausente ou
+  /// vazia simplesmente não aparece no caderno.
+  final Map<String, String> socialLinks;
+
+  /// Campos livres de "sobre você" — nenhum é obrigatório; um vazio não
+  /// aparece no caderno.
+  final String practicingSince;
+  final String dreamTrail;
+  final String favoriteGear;
+
   const UserProfile({
     required this.uid,
     required this.name,
@@ -80,6 +102,13 @@ class UserProfile {
     this.checked = const {},
     this.msgs = seedMsgs,
     this.gear = const {},
+    this.photoUrl = '',
+    this.coverUrl = '',
+    this.bio = '',
+    this.socialLinks = const {},
+    this.practicingSince = '',
+    this.dreamTrail = '',
+    this.favoriteGear = '',
   });
 
   /// Perfil inicial de quem acabou de se cadastrar — nível 1, desnível
@@ -130,6 +159,13 @@ class UserProfile {
     Map<String, bool>? checked,
     List<Msg>? msgs,
     Map<String, GearUsage>? gear,
+    String? photoUrl,
+    String? coverUrl,
+    String? bio,
+    Map<String, String>? socialLinks,
+    String? practicingSince,
+    String? dreamTrail,
+    String? favoriteGear,
   }) =>
       UserProfile(
         uid: uid,
@@ -151,6 +187,13 @@ class UserProfile {
         checked: checked ?? this.checked,
         msgs: msgs ?? this.msgs,
         gear: gear ?? this.gear,
+        photoUrl: photoUrl ?? this.photoUrl,
+        coverUrl: coverUrl ?? this.coverUrl,
+        bio: bio ?? this.bio,
+        socialLinks: socialLinks ?? this.socialLinks,
+        practicingSince: practicingSince ?? this.practicingSince,
+        dreamTrail: dreamTrail ?? this.dreamTrail,
+        favoriteGear: favoriteGear ?? this.favoriteGear,
       );
 
   Map<String, dynamic> toMap() => {
@@ -172,6 +215,13 @@ class UserProfile {
         'checked': checked,
         'msgs': msgs.map((m) => m.toMap()).toList(),
         'gear': gear.map((k, v) => MapEntry(k, v.toMap())),
+        'photoUrl': photoUrl,
+        'coverUrl': coverUrl,
+        'bio': bio,
+        'socialLinks': socialLinks,
+        'practicingSince': practicingSince,
+        'dreamTrail': dreamTrail,
+        'favoriteGear': favoriteGear,
       };
 
   factory UserProfile.fromMap(String uid, Map<String, dynamic> m) => UserProfile(
@@ -209,5 +259,13 @@ class UserProfile {
               (k, v) => MapEntry(k as String, GearUsage.fromMap(Map<String, dynamic>.from(v as Map))),
             ) ??
             const {},
+        photoUrl: (m['photoUrl'] as String?) ?? '',
+        coverUrl: (m['coverUrl'] as String?) ?? '',
+        bio: (m['bio'] as String?) ?? '',
+        socialLinks:
+            (m['socialLinks'] as Map?)?.map((k, v) => MapEntry(k as String, v as String)) ?? const {},
+        practicingSince: (m['practicingSince'] as String?) ?? '',
+        dreamTrail: (m['dreamTrail'] as String?) ?? '',
+        favoriteGear: (m['favoriteGear'] as String?) ?? '',
       );
 }

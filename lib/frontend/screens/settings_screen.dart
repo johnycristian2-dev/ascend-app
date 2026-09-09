@@ -18,6 +18,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _goal;
   late String _units;
 
+  late final TextEditingController _bio;
+  late final TextEditingController _photoUrl;
+  late final TextEditingController _coverUrl;
+  late final TextEditingController _instagram;
+  late final TextEditingController _strava;
+  late final TextEditingController _youtube;
+  late final TextEditingController _website;
+  late final TextEditingController _practicingSince;
+  late final TextEditingController _dreamTrail;
+  late final TextEditingController _favoriteGear;
+
   @override
   void initState() {
     super.initState();
@@ -26,6 +37,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _base = TextEditingController(text: s.baseName);
     _goal = TextEditingController(text: s.elevGoal.toString());
     _units = s.units;
+    _bio = TextEditingController(text: s.bio);
+    _photoUrl = TextEditingController(text: s.photoUrl);
+    _coverUrl = TextEditingController(text: s.coverUrl);
+    _instagram = TextEditingController(text: s.socialLinks['instagram'] ?? '');
+    _strava = TextEditingController(text: s.socialLinks['strava'] ?? '');
+    _youtube = TextEditingController(text: s.socialLinks['youtube'] ?? '');
+    _website = TextEditingController(text: s.socialLinks['website'] ?? '');
+    _practicingSince = TextEditingController(text: s.practicingSince);
+    _dreamTrail = TextEditingController(text: s.dreamTrail);
+    _favoriteGear = TextEditingController(text: s.favoriteGear);
   }
 
   @override
@@ -33,6 +54,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _name.dispose();
     _base.dispose();
     _goal.dispose();
+    _bio.dispose();
+    _photoUrl.dispose();
+    _coverUrl.dispose();
+    _instagram.dispose();
+    _strava.dispose();
+    _youtube.dispose();
+    _website.dispose();
+    _practicingSince.dispose();
+    _dreamTrail.dispose();
+    _favoriteGear.dispose();
     super.dispose();
   }
 
@@ -55,7 +86,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const KeyArtPortrait(width: 64, height: 78),
+                        ProfileAvatar(photoUrl: s.photoUrl, size: 64),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _EditField(label: 'nome de campo', controller: _name),
@@ -72,6 +103,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 label: 'META DE DESNÍVEL (m POR TEMPORADA)',
                 controller: _goal,
                 keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 14),
+              const AppLabel('PERFIL PÚBLICO', size: 9, tracking: 0.26),
+              const SizedBox(height: 8),
+              AppPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _EditField(label: 'BIOGRAFIA', controller: _bio, maxLines: 3),
+                    const SizedBox(height: 10),
+                    _EditField(
+                      label: 'FOTO DE PERFIL (LINK)',
+                      controller: _photoUrl,
+                      keyboardType: TextInputType.url,
+                    ),
+                    const SizedBox(height: 10),
+                    _EditField(
+                      label: 'PLANO DE FUNDO (LINK)',
+                      controller: _coverUrl,
+                      keyboardType: TextInputType.url,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Cole o link de uma imagem já hospedada em algum lugar — o app não '
+                      'guarda a foto em si, só o endereço dela. Em branco usa o retrato padrão.',
+                      style: AppTypography.body(size: 9, color: AppColors.dim),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              const AppLabel('REDES SOCIAIS', size: 9, tracking: 0.26),
+              const SizedBox(height: 8),
+              AppPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _EditField(label: 'INSTAGRAM', controller: _instagram),
+                    const SizedBox(height: 10),
+                    _EditField(label: 'STRAVA', controller: _strava),
+                    const SizedBox(height: 10),
+                    _EditField(label: 'YOUTUBE', controller: _youtube),
+                    const SizedBox(height: 10),
+                    _EditField(
+                      label: 'SITE PESSOAL',
+                      controller: _website,
+                      keyboardType: TextInputType.url,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              const AppLabel('SOBRE VOCÊ', size: 9, tracking: 0.26),
+              const SizedBox(height: 8),
+              AppPanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _EditField(label: 'PRATICANDO DESDE', controller: _practicingSince),
+                    const SizedBox(height: 10),
+                    _EditField(label: 'TRILHA DOS SONHOS', controller: _dreamTrail),
+                    const SizedBox(height: 10),
+                    _EditField(label: 'EQUIPAMENTO FAVORITO', controller: _favoriteGear),
+                  ],
+                ),
               ),
               const SizedBox(height: 10),
               const AppLabel('UNIDADES', color: AppColors.dim, size: 9, tracking: 0.26),
@@ -124,6 +220,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     baseName: _base.text,
                     elevGoal: goal,
                     units: _units,
+                    bio: _bio.text,
+                    photoUrl: _photoUrl.text,
+                    coverUrl: _coverUrl.text,
+                    instagram: _instagram.text,
+                    strava: _strava.text,
+                    youtube: _youtube.text,
+                    website: _website.text,
+                    practicingSince: _practicingSince.text,
+                    dreamTrail: _dreamTrail.text,
+                    favoriteGear: _favoriteGear.text,
                   );
                 },
               ),
@@ -141,7 +247,13 @@ class _EditField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final TextInputType? keyboardType;
-  const _EditField({required this.label, required this.controller, this.keyboardType});
+  final int maxLines;
+  const _EditField({
+    required this.label,
+    required this.controller,
+    this.keyboardType,
+    this.maxLines = 1,
+  });
 
   @override
   Widget build(BuildContext c) => Column(
@@ -158,6 +270,7 @@ class _EditField extends StatelessWidget {
             child: TextField(
               controller: controller,
               keyboardType: keyboardType,
+              maxLines: maxLines,
               style: AppTypography.body(size: 11, color: AppColors.text),
               decoration: const InputDecoration(
                 border: InputBorder.none,

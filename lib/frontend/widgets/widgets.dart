@@ -13,3 +13,5 @@ export 'two_column_row.dart';
 export 'app_tag.dart';
 export 'key_art_background.dart';
 export 'key_art_portrait.dart';
+export 'profile_avatar.dart';
+export 'profile_cover.dart';

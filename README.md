@@ -40,6 +40,20 @@ quiser outro ritmo. Uma conta nova começa com equipamento zerado; a conta
 que já existia (johnycristian2) mantém os números atuais até a primeira
 saída registrada.
 
+**Identidade pública:** o caderno agora tem foto de perfil, plano de fundo,
+biografia, redes sociais (Instagram, Strava, YouTube, site pessoal) e um
+"sobre você" (praticando desde, trilha dos sonhos, equipamento favorito) —
+tudo editável em Ajustes, tudo opcional (campo vazio simplesmente não
+aparece no caderno). Foto e capa são **link**, não upload: o app não guarda
+arquivo nenhum, só o endereço de uma imagem já hospedada em outro lugar —
+sem isso não precisa de Firebase Storage, de pacote de câmera/galeria, nem
+de permissão nativa nenhuma. Sem link definido, usa a key art do app como
+retrato/fundo padrão (`ProfileAvatar`/`ProfileCover`, em
+`lib/frontend/widgets/`). Redes sociais aparecem como chip com ícone e
+identificador — não são link clicável ainda; isso pediria o pacote
+`url_launcher` e configuração nativa (Android/iOS) que não dá pra testar
+sem o SDK aqui.
+
 **1. Projeto criado** ✅ — `ascend-1d51e`, na conta johnycristian2@gmail.com.
 
 **2. Ativar login por e-mail/senha** — confirme que está feito:
@@ -67,8 +81,9 @@ produção espera. Não é preciso pra desenvolver/testar agora.
 desnível, nível, rank, desnível acumulado, os quatro atributos, os itens
 deixados em casa (mochila), a partida escolhida (janela), os votos/dívidas
 de confirmação de bastão, a trilha e data do plano de expedição, quem foi
-convocado pra cordada e quem leva cada item coletivo, e o histórico do chat
-— tudo em `users/{uid}` no Firestore. Cadastro cria o documento na avaliação
+convocado pra cordada e quem leva cada item coletivo, o histórico do chat,
+uso/desgaste de equipamento, e a identidade pública (foto, capa, bio,
+redes sociais, sobre você) — tudo em `users/{uid}` no Firestore. Cadastro cria o documento na avaliação
 inicial (rank de partida definido pelo quiz, resto zerado — ver
 `UserProfile.starter`; a conversa inicial da cordada é a exceção, é cenário
 e não decisão, então já vem preenchida); login recupera a sessão inteira,
@@ -100,8 +115,8 @@ lib/
       expedition_state.dart              estado global (ChangeNotifier), derivados e ponte com o backend
       expedition_calculator.dart         Dart puro: peso, variantes de rota, day1Min, formatação
     models/
-      user_profile_model.dart            o que persiste em users/{uid} no Firestore
-                                          (perfil + mochila + janela + bastão + plano + cordada + chat + equip.)
+      user_profile_model.dart            o que persiste em users/{uid} no Firestore (perfil + mochila +
+                                          janela + bastão + plano + cordada + chat + equip. + identidade pública)
       attr_model.dart                    um atributo físico (Resistência, Força…)
       chat_message_model.dart            uma mensagem da cordada
       gear_usage_model.dart              uso/desgaste registrado de uma peça (GearUsage.logOuting)
@@ -118,7 +133,9 @@ lib/
       app_colors.dart                    paleta do protótipo
       app_typography.dart                Barlow Condensed (rótulos/números) + Inter (corpo)
     widgets/                             AppLabel, AppPanel, AppButton, AppTextField, ScreenBar,
-                                          AppTag, TwoColumnRow, AppProgressBar, AppStat, nav, índice
+                                          AppTag, TwoColumnRow, AppProgressBar, AppStat, nav, índice,
+                                          ProfileAvatar, ProfileCover (foto/capa do caderno, com
+                                          fallback pra key art), KeyArtBackground, KeyArtPortrait
                                           (import único: widgets/widgets.dart)
     screens/                             as 20 telas (*_screen.dart) + field_screen.dart (modo campo)
 

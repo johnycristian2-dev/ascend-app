@@ -48,6 +48,15 @@ class ExpeditionState extends ChangeNotifier {
   String baseName = 'São Bento do Sapucaí';
   String units = 'métrico';
 
+  // ------------------------------------------------------- identidade pública
+  String photoUrl = '';
+  String coverUrl = '';
+  String bio = '';
+  final Map<String, String> socialLinks = {};
+  String practicingSince = '';
+  String dreamTrail = '';
+  String favoriteGear = '';
+
   int wxSec = 133964;
   int wxPick = 1;
 
@@ -236,6 +245,15 @@ class ExpeditionState extends ChangeNotifier {
     gear
       ..clear()
       ..addAll(p.gear);
+    photoUrl = p.photoUrl;
+    coverUrl = p.coverUrl;
+    bio = p.bio;
+    socialLinks
+      ..clear()
+      ..addAll(p.socialLinks);
+    practicingSince = p.practicingSince;
+    dreamTrail = p.dreamTrail;
+    favoriteGear = p.favoriteGear;
   }
 
   /// Grava o essencial do caderno no Firestore. Silencioso de propósito —
@@ -266,6 +284,13 @@ class ExpeditionState extends ChangeNotifier {
       'checked': checked,
       'msgs': msgs.map((m) => m.toMap()).toList(),
       'gear': gear.map((k, v) => MapEntry(k, v.toMap())),
+      'photoUrl': photoUrl,
+      'coverUrl': coverUrl,
+      'bio': bio,
+      'socialLinks': socialLinks,
+      'practicingSince': practicingSince,
+      'dreamTrail': dreamTrail,
+      'favoriteGear': favoriteGear,
     }).catchError((_) {});
   }
 
@@ -491,11 +516,35 @@ class ExpeditionState extends ChangeNotifier {
     required String baseName,
     required int elevGoal,
     required String units,
+    required String bio,
+    required String photoUrl,
+    required String coverUrl,
+    required String instagram,
+    required String strava,
+    required String youtube,
+    required String website,
+    required String practicingSince,
+    required String dreamTrail,
+    required String favoriteGear,
   }) {
     this.name = name.trim().isEmpty ? this.name : name.trim();
     this.baseName = baseName.trim();
     this.elevGoal = elevGoal.clamp(2000, 12000);
     this.units = units;
+    this.bio = bio.trim();
+    this.photoUrl = photoUrl.trim();
+    this.coverUrl = coverUrl.trim();
+    socialLinks
+      ..clear()
+      ..addAll({
+        if (instagram.trim().isNotEmpty) 'instagram': instagram.trim(),
+        if (strava.trim().isNotEmpty) 'strava': strava.trim(),
+        if (youtube.trim().isNotEmpty) 'youtube': youtube.trim(),
+        if (website.trim().isNotEmpty) 'website': website.trim(),
+      });
+    this.practicingSince = practicingSince.trim();
+    this.dreamTrail = dreamTrail.trim();
+    this.favoriteGear = favoriteGear.trim();
     _syncProfile();
     go('profile');
   }
