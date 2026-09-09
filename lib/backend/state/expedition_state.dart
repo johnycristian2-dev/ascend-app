@@ -87,6 +87,9 @@ class ExpeditionState extends ChangeNotifier {
   /// até a primeira sincronização — ver [gearUsage].
   final Map<String, GearUsage> gear = {};
 
+  /// Ids de `achievementCatalog` já desbloqueados. Só cresce — ver [_unlock].
+  final Set<String> unlockedAchievements = {};
+
   /// Modo campo: tela cheia de instrumento, acessível a partir do mapa.
   bool fieldMode = false;
 
@@ -248,6 +251,9 @@ class ExpeditionState extends ChangeNotifier {
     gear
       ..clear()
       ..addAll(p.gear);
+    unlockedAchievements
+      ..clear()
+      ..addAll(p.unlockedAchievements);
     photoUrl = p.photoUrl;
     coverUrl = p.coverUrl;
     bio = p.bio;
@@ -287,6 +293,7 @@ class ExpeditionState extends ChangeNotifier {
       'checked': checked,
       'msgs': msgs.map((m) => m.toMap()).toList(),
       'gear': gear.map((k, v) => MapEntry(k, v.toMap())),
+      'unlockedAchievements': unlockedAchievements.toList(),
       'photoUrl': photoUrl,
       'coverUrl': coverUrl,
       'bio': bio,
@@ -296,6 +303,12 @@ class ExpeditionState extends ChangeNotifier {
       'favoriteGear': favoriteGear,
     }).catchError((_) {});
   }
+
+  /// Desbloqueia uma conquista de `achievementCatalog` (por id) se ainda
+  /// não estava. Não sincroniza sozinho — chame antes do `_syncProfile()`
+  /// que o método que disparou a conquista já ia fazer de qualquer jeito,
+  /// pra virar uma escrita só.
+  void _unlock(String id) => unlockedAchievements.add(id);
 
   Future<String?> signIn({required String email, required String password}) async {
     authLoading = true;
@@ -397,12 +410,18 @@ class ExpeditionState extends ChangeNotifier {
 
   void toggleCarry(String nome) {
     packOut.contains(nome) ? packOut.remove(nome) : packOut.add(nome);
+    if (overweight) _unlock('peso_no_limite');
+    if (kg < 10) _unlock('mochila_leve');
     _syncProfile();
     notifyListeners();
   }
 
   void voteRelay(int i, String v) {
     relayVote[i] = relayVote[i] == v ? null : v;
+    if (relayVote[i] == 'y') {
+      _unlock('primeira_confirmacao');
+      if (relayData[i].diasDesdeConfirmacao > 182) _unlock('confirmou_recado_velho');
+    }
     _syncProfile();
     notifyListeners();
   }
@@ -422,6 +441,8 @@ class ExpeditionState extends ChangeNotifier {
     if (relayDraft.trim().isEmpty) return;
     relaySent = true;
     relayDraft = '';
+    _unlock('primeiro_recado');
+    _syncProfile();
     notifyListeners();
   }
 
@@ -453,6 +474,7 @@ class ExpeditionState extends ChangeNotifier {
   void logGearOuting(String id) {
     final unit = gearData.firstWhere((g) => g.id == id).unit;
     gear[id] = gearUsage(id).logOuting(unit);
+    _unlock('primeira_saida_equip');
     _syncProfile();
     notifyListeners();
   }
@@ -463,6 +485,7 @@ class ExpeditionState extends ChangeNotifier {
     if (draft.trim().isEmpty) return;
     msgs = [...msgs, Msg('VOCÊ', '08:31', draft.trim(), true)];
     draft = '';
+    _unlock('primeira_mensagem');
     _syncProfile();
     notifyListeners();
   }
@@ -487,6 +510,7 @@ class ExpeditionState extends ChangeNotifier {
     attrs = [
       for (var i = 0; i < attrs.length; i++) attrs[i].bump(deltas[i])
     ];
+    _unlock('rank_up');
   }
 
   /// Arquiva o registro. Se a meta caiu, dispara a reavaliação de rank.

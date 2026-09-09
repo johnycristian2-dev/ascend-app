@@ -60,6 +60,11 @@ class UserProfile {
   /// este campo — ver `ExpeditionState.gearUsage`.
   final Map<String, GearUsage> gear;
 
+  /// Ids de `achievementCatalog` (achievement_catalog.dart) já
+  /// desbloqueados por algo que você realmente fez — nunca reseta, nem
+  /// se a condição que disparou deixar de valer depois.
+  final List<String> unlockedAchievements;
+
   // ------------------------------------------------------- identidade pública
 
   /// URL de uma imagem já hospedada em outro lugar — o app não faz
@@ -102,6 +107,7 @@ class UserProfile {
     this.checked = const {},
     this.msgs = seedMsgs,
     this.gear = const {},
+    this.unlockedAchievements = const [],
     this.photoUrl = '',
     this.coverUrl = '',
     this.bio = '',
@@ -159,6 +165,7 @@ class UserProfile {
     Map<String, bool>? checked,
     List<Msg>? msgs,
     Map<String, GearUsage>? gear,
+    List<String>? unlockedAchievements,
     String? photoUrl,
     String? coverUrl,
     String? bio,
@@ -187,6 +194,7 @@ class UserProfile {
         checked: checked ?? this.checked,
         msgs: msgs ?? this.msgs,
         gear: gear ?? this.gear,
+        unlockedAchievements: unlockedAchievements ?? this.unlockedAchievements,
         photoUrl: photoUrl ?? this.photoUrl,
         coverUrl: coverUrl ?? this.coverUrl,
         bio: bio ?? this.bio,
@@ -215,6 +223,7 @@ class UserProfile {
         'checked': checked,
         'msgs': msgs.map((m) => m.toMap()).toList(),
         'gear': gear.map((k, v) => MapEntry(k, v.toMap())),
+        'unlockedAchievements': unlockedAchievements,
         'photoUrl': photoUrl,
         'coverUrl': coverUrl,
         'bio': bio,
@@ -259,6 +268,8 @@ class UserProfile {
               (k, v) => MapEntry(k as String, GearUsage.fromMap(Map<String, dynamic>.from(v as Map))),
             ) ??
             const {},
+        unlockedAchievements:
+            (m['unlockedAchievements'] as List?)?.map((e) => e as String).toList() ?? const [],
         photoUrl: (m['photoUrl'] as String?) ?? '',
         coverUrl: (m['coverUrl'] as String?) ?? '',
         bio: (m['bio'] as String?) ?? '',

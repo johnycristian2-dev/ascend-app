@@ -21,8 +21,9 @@ flutter run
 
 Autenticação, o caderno de expedição (perfil), o circuito de decisão
 (mochila, partida escolhida, votos e dívidas de bastão), o plano de
-expedição, a convocação de cordada, o chat e o equipamento agora são
-reais — Firebase Auth + Firestore. Só a contagem regressiva da janela
+expedição, a convocação de cordada, o chat, o equipamento e as conquistas
+desbloqueadas agora são reais — Firebase Auth + Firestore. Só a contagem
+regressiva da janela
 (`wxSec` — um número decrescendo a partir de uma constante, não ancorado
 num horário real; persistir isso direito pediria guardar o horário-alvo,
 não o segundo atual) continua local.
@@ -86,8 +87,9 @@ desnível, nível, rank, desnível acumulado, os quatro atributos, os itens
 deixados em casa (mochila), a partida escolhida (janela), os votos/dívidas
 de confirmação de bastão, a trilha e data do plano de expedição, quem foi
 convocado pra cordada e quem leva cada item coletivo, o histórico do chat,
-uso/desgaste de equipamento, e a identidade pública (foto, capa, bio,
-redes sociais, sobre você) — tudo em `users/{uid}` no Firestore. Cadastro cria o documento na avaliação
+uso/desgaste de equipamento, as conquistas desbloqueadas, e a identidade
+pública (foto, capa, bio, redes sociais, sobre você) — tudo em
+`users/{uid}` no Firestore. Cadastro cria o documento na avaliação
 inicial (rank de partida definido pelo quiz, resto zerado — ver
 `UserProfile.starter`; a conversa inicial da cordada é a exceção, é cenário
 e não decisão, então já vem preenchida); login recupera a sessão inteira,
@@ -130,7 +132,8 @@ lib/
     data/
       weather_forecast.dart              blocos de previsão, 4 slots de partida, exigências
       relay_notes.dart                   os 5 recados ancorados
-      gear_catalog.dart                  equipamento com odômetro, e carimbos
+      gear_catalog.dart                  equipamento com odômetro, e carimbos (stampData)
+      achievement_catalog.dart           conquistas desbloqueáveis por ação real (ver Diferenciais)
   frontend/
     app.dart                             AscendApp, Shell (troca de tela) e o InheritedNotifier Expedition
     theme/
@@ -193,10 +196,23 @@ inflar o app com feature genérica:
   Aparece na tela de rota (painel clicável, leva direto pros recados) e
   como selo na própria tela de bastão. Com testes em
   `expedition_calculator_test.dart`.
-- Próximos candidatos (ainda não implementados): conquistas geradas a
-  partir do que você realmente fez, em vez de `stampData` estático; um
-  orçamento de risco único juntando peso, clima e descompasso técnico;
-  uma foto-lembrança por expedição arquivada.
+- **Conquistas geradas pelo que você fez, não roteirizadas**
+  (`achievementCatalog`, em `achievement_catalog.dart`, e
+  `ExpeditionState.unlockedAchievements`): ao lado das metas fixas de
+  demonstração (`stampData`), uma seção nova de carimbos que só
+  desbloqueiam com uma ação real sua — passar de 12 kg pela primeira
+  vez, arrumar a mochila abaixo de 10 kg, confirmar um recado de
+  bastão (ainda mais se ele tiver mais de 6 meses sem confirmação),
+  ancorar seu primeiro recado, registrar a primeira saída de um
+  equipamento, mandar a primeira mensagem na cordada, subir de rank
+  pela primeira vez. Uma vez desbloqueada, uma conquista nunca some —
+  `_unlock()` só adiciona ao conjunto, nunca remove, mesmo que a
+  condição que disparou deixe de valer depois (tirar peso da mochila de
+  novo não tira a conquista de "já carregou mais de 12 kg"). Aparece em
+  CARIMBOS, acima das metas fixas.
+- Próximos candidatos (ainda não implementados): um orçamento de risco
+  único juntando peso, clima e descompasso técnico; uma foto-lembrança
+  por expedição arquivada.
 
 ## Arte
 
