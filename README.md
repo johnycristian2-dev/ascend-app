@@ -19,11 +19,13 @@ flutter run
 
 ## Backend (Firebase)
 
-Autenticação e o caderno de expedição (perfil) agora são reais — Firebase
-Auth + Firestore. O resto (mochila, janela, bastão, chat, equipamento) segue
-com dados de demonstração locais; é a próxima fatia de backend a fazer.
+Autenticação, o caderno de expedição (perfil) e as decisões do circuito
+(mochila, partida escolhida, votos e dívidas de bastão) agora são reais —
+Firebase Auth + Firestore. Chat, plano de expedição, convocação de cordada
+e equipamento seguem com dados de demonstração locais; é a próxima fatia de
+backend a fazer.
 
-**1. Projeto criado** ✅ — `ascend-ff71d`, na conta johnycristian2@gmail.com.
+**1. Projeto criado** ✅ — `ascend-1d51e`, na conta johnycristian2@gmail.com.
 
 **2. Ativar login por e-mail/senha** — confirme que está feito:
 - No projeto → Build → Authentication → Sign-in method → ative **E-mail/senha**.
@@ -47,10 +49,17 @@ rode `flutterfire configure` — isso gera os arquivos nativos
 produção espera. Não é preciso pra desenvolver/testar agora.
 
 **O que persiste hoje:** nome de campo, base/região, unidades, meta de
-desnível, nível, rank, desnível acumulado e os quatro atributos — em
-`users/{uid}` no Firestore. Cadastro cria o documento na avaliação inicial
-(rank de partida definido pelo quiz); login recupera a sessão; "AJUSTES"
-grava as edições; "SAIR DA CONTA" desloga de verdade.
+desnível, nível, rank, desnível acumulado, os quatro atributos, os itens
+deixados em casa (mochila), a partida escolhida (janela) e os votos/dívidas
+de confirmação de bastão — tudo em `users/{uid}` no Firestore. Cadastro cria
+o documento na avaliação inicial (rank de partida definido pelo quiz, resto
+zerado — ver `UserProfile.starter`); login recupera a sessão inteira, decisões
+incluídas; "AJUSTES" grava as edições; "SAIR DA CONTA" desloga de verdade.
+
+Cada ação do circuito de decisão (marcar/desmarcar item da mochila, escolher
+partida, votar num recado) grava no Firestore na hora — silencioso, sem
+travar a navegação se a rede cair (a escrita fica enfileirada e sincroniza
+quando voltar).
 
 ## Estrutura
 
@@ -69,6 +78,7 @@ lib/
       expedition_calculator.dart         Dart puro: peso, variantes de rota, day1Min, formatação
     models/
       user_profile_model.dart            o que persiste em users/{uid} no Firestore
+                                          (perfil + mochila + janela + bastão)
       attr_model.dart                    um atributo físico (Resistência, Força…)
     services/
       auth_service.dart                  fina camada sobre o Firebase Auth

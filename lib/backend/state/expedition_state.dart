@@ -198,6 +198,16 @@ class ExpeditionState extends ChangeNotifier {
     elevGoal = p.elevGoal;
     rankIdx = p.rankIdx;
     attrs = p.attrs;
+    packOut
+      ..clear()
+      ..addAll(p.packOut);
+    wxPick = p.wxPick;
+    relayVote
+      ..clear()
+      ..addEntries(p.relayVotes.entries.map((e) => MapEntry(int.parse(e.key), e.value)));
+    relayUsed
+      ..clear()
+      ..addAll(p.relayUsed);
   }
 
   /// Grava o essencial do caderno no Firestore. Silencioso de propósito —
@@ -215,6 +225,13 @@ class ExpeditionState extends ChangeNotifier {
       'elevGoal': elevGoal,
       'rankIdx': rankIdx,
       'attrs': attrs.map((a) => a.toMap()).toList(),
+      'packOut': packOut.toList(),
+      'wxPick': wxPick,
+      'relayVotes': {
+        for (final e in relayVote.entries)
+          if (e.value != null) '${e.key}': e.value!,
+      },
+      'relayUsed': relayUsed.toList(),
     }).catchError((_) {});
   }
 
@@ -282,8 +299,14 @@ class ExpeditionState extends ChangeNotifier {
     final id = uid;
     if (id != null) {
       try {
-        await profiles.create(UserProfile.starter(uid: id, name: name, rankIdx: rankIdx)
-            .copyWith(baseName: baseName));
+        final starter = UserProfile.starter(uid: id, name: name, rankIdx: rankIdx)
+            .copyWith(baseName: baseName);
+        await profiles.create(starter);
+        // O caderno recém-criado começa com mochila/janela/bastão zerados
+        // (ver UserProfile.starter) — aplica localmente pra não ficar com
+        // os defaults de demonstração até a próxima gravação, que os
+        // reescreveria no Firestore por cima do que acabou de ser criado.
+        _applyProfile(starter);
       } catch (_) {
         // Sem rede agora — segue mesmo assim; o caderno tenta de novo
         // na próxima gravação (settings, fim de trilha, etc.).
@@ -299,7 +322,11 @@ class ExpeditionState extends ChangeNotifier {
     }
   }
 
-  void pickWx(int i) { wxPick = i; notifyListeners(); }
+  void pickWx(int i) {
+    wxPick = i;
+    _syncProfile();
+    notifyListeners();
+  }
   void setTrail(TrailState t) { trail = t; notifyListeners(); }
 
   /// Modo campo é uma sobreposição, não uma tela do fluxo — como no protótipo.
@@ -308,18 +335,21 @@ class ExpeditionState extends ChangeNotifier {
 
   void toggleCarry(String nome) {
     packOut.contains(nome) ? packOut.remove(nome) : packOut.add(nome);
+    _syncProfile();
     notifyListeners();
   }
 
   void voteRelay(int i, String v) {
     relayVote[i] = relayVote[i] == v ? null : v;
+    _syncProfile();
     notifyListeners();
   }
 
   void pickPin(int? i) {
     relaySel = relaySel == i ? null : i;
     // Abrir um recado em campo é usá-lo — a confirmação vira uma dívida.
-    if (relaySel != null) relayUsed.add(relaySel!);
+    // Só sincroniza quando a dívida muda de verdade, não a cada seleção.
+    if (relaySel != null && relayUsed.add(relaySel!)) _syncProfile();
     notifyListeners();
   }
   void setRelayDraft(String v) {
