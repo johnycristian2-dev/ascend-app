@@ -1,13 +1,22 @@
 import 'attr_model.dart';
+import 'chat_message_model.dart';
+
+/// Conversa inicial de toda cordada recém-formada — a mesma que o
+/// protótipo sempre mostrou. Flavor, não uma decisão do usuário: por
+/// isso, ao contrário de [UserProfile.starter]'s outros campos, não
+/// começa vazia.
+const seedMsgs = <Msg>[
+  Msg('KAI', '08:12', 'Saindo do abrigo agora. Vento forte na crista norte.', false),
+  Msg('VOCÊ', '08:14', 'Copiado. Levo a corda extra de 60 m.', true),
+  Msg('NINA', '08:20', 'Chego no ponto 2 em 40 min. Marquem no mapa.', false),
+];
 
 /// O que persiste no Firestore em `users/{uid}` — o caderno de expedição
 /// de verdade, não mais mockado em memória.
 ///
-/// `packOut`, a partida escolhida e os votos/dívidas de bastão persistem
-/// porque são decisões que não fazem sentido resetar toda vez que o app
-/// abre. O resto (janela em contagem regressiva, plano de expedição,
-/// convocação de cordada, chat, equipamento) continua local, com os
-/// dados de demonstração do protótipo — é a próxima fatia de backend.
+/// Só a janela em contagem regressiva e o equipamento (sem nenhuma
+/// interação que o altere ainda) continuam puramente locais — o resto
+/// do circuito de decisão e da cordada já persiste.
 class UserProfile {
   final String uid;
   final String name;
@@ -33,6 +42,18 @@ class UserProfile {
   /// confirmação que trava o arquivamento do registro (ver `fileRecord`).
   final List<int> relayUsed;
 
+  /// Trilha e dia escolhidos na tela "Nova expedição".
+  final int planTrail;
+  final int planDate;
+
+  /// Quem foi convocado pra cordada (nome-chave -> convidado?) e quem
+  /// leva cada item do equipamento coletivo (nome-chave -> marcado?).
+  final Map<String, bool> invited;
+  final Map<String, bool> checked;
+
+  /// Histórico da conversa da cordada.
+  final List<Msg> msgs;
+
   const UserProfile({
     required this.uid,
     required this.name,
@@ -47,11 +68,17 @@ class UserProfile {
     this.wxPick = 0,
     this.relayVotes = const {},
     this.relayUsed = const [],
+    this.planTrail = 0,
+    this.planDate = 8,
+    this.invited = const {},
+    this.checked = const {},
+    this.msgs = seedMsgs,
   });
 
   /// Perfil inicial de quem acabou de se cadastrar — nível 1, desnível
-  /// zerado, atributos de base, nada decidido ainda na mochila/janela/
-  /// bastão. O rank de partida vem da avaliação inicial (onboarding),
+  /// zerado, atributos de base, nada decidido ainda na mochila, janela,
+  /// bastão, plano ou cordada (só a conversa inicial, que é cenário, não
+  /// decisão). O rank de partida vem da avaliação inicial (onboarding),
   /// não deste construtor.
   factory UserProfile.starter({
     required String uid,
@@ -88,6 +115,11 @@ class UserProfile {
     int? wxPick,
     Map<String, String>? relayVotes,
     List<int>? relayUsed,
+    int? planTrail,
+    int? planDate,
+    Map<String, bool>? invited,
+    Map<String, bool>? checked,
+    List<Msg>? msgs,
   }) =>
       UserProfile(
         uid: uid,
@@ -103,6 +135,11 @@ class UserProfile {
         wxPick: wxPick ?? this.wxPick,
         relayVotes: relayVotes ?? this.relayVotes,
         relayUsed: relayUsed ?? this.relayUsed,
+        planTrail: planTrail ?? this.planTrail,
+        planDate: planDate ?? this.planDate,
+        invited: invited ?? this.invited,
+        checked: checked ?? this.checked,
+        msgs: msgs ?? this.msgs,
       );
 
   Map<String, dynamic> toMap() => {
@@ -118,6 +155,11 @@ class UserProfile {
         'wxPick': wxPick,
         'relayVotes': relayVotes,
         'relayUsed': relayUsed,
+        'planTrail': planTrail,
+        'planDate': planDate,
+        'invited': invited,
+        'checked': checked,
+        'msgs': msgs.map((m) => m.toMap()).toList(),
       };
 
   factory UserProfile.fromMap(String uid, Map<String, dynamic> m) => UserProfile(
@@ -143,5 +185,13 @@ class UserProfile {
         relayVotes: (m['relayVotes'] as Map?)?.map((k, v) => MapEntry(k as String, v as String)) ??
             const {},
         relayUsed: (m['relayUsed'] as List?)?.map((e) => (e as num).toInt()).toList() ?? const [],
+        planTrail: ((m['planTrail'] as num?) ?? 0).toInt(),
+        planDate: ((m['planDate'] as num?) ?? 8).toInt(),
+        invited: (m['invited'] as Map?)?.map((k, v) => MapEntry(k as String, v as bool)) ?? const {},
+        checked: (m['checked'] as Map?)?.map((k, v) => MapEntry(k as String, v as bool)) ?? const {},
+        msgs: (m['msgs'] as List?)
+                ?.map((e) => Msg.fromMap(Map<String, dynamic>.from(e as Map)))
+                .toList() ??
+            seedMsgs,
       );
 }

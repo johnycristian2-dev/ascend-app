@@ -19,11 +19,14 @@ flutter run
 
 ## Backend (Firebase)
 
-Autenticação, o caderno de expedição (perfil) e as decisões do circuito
-(mochila, partida escolhida, votos e dívidas de bastão) agora são reais —
-Firebase Auth + Firestore. Chat, plano de expedição, convocação de cordada
-e equipamento seguem com dados de demonstração locais; é a próxima fatia de
-backend a fazer.
+Autenticação, o caderno de expedição (perfil), o circuito de decisão
+(mochila, partida escolhida, votos e dívidas de bastão), o plano de
+expedição, a convocação de cordada e o chat agora são reais — Firebase
+Auth + Firestore. Só a contagem regressiva da janela (`wxSec` — um número
+decrescendo a partir de uma constante, não ancorado num horário real; persistir
+isso direito pediria guardar o horário-alvo, não o segundo atual) e o
+equipamento (`gear_catalog.dart` — sem nenhuma interação que mude
+desgaste/uso ainda) continuam locais.
 
 **1. Projeto criado** ✅ — `ascend-1d51e`, na conta johnycristian2@gmail.com.
 
@@ -50,16 +53,24 @@ produção espera. Não é preciso pra desenvolver/testar agora.
 
 **O que persiste hoje:** nome de campo, base/região, unidades, meta de
 desnível, nível, rank, desnível acumulado, os quatro atributos, os itens
-deixados em casa (mochila), a partida escolhida (janela) e os votos/dívidas
-de confirmação de bastão — tudo em `users/{uid}` no Firestore. Cadastro cria
-o documento na avaliação inicial (rank de partida definido pelo quiz, resto
-zerado — ver `UserProfile.starter`); login recupera a sessão inteira, decisões
-incluídas; "AJUSTES" grava as edições; "SAIR DA CONTA" desloga de verdade.
+deixados em casa (mochila), a partida escolhida (janela), os votos/dívidas
+de confirmação de bastão, a trilha e data do plano de expedição, quem foi
+convocado pra cordada e quem leva cada item coletivo, e o histórico do chat
+— tudo em `users/{uid}` no Firestore. Cadastro cria o documento na avaliação
+inicial (rank de partida definido pelo quiz, resto zerado — ver
+`UserProfile.starter`; a conversa inicial da cordada é a exceção, é cenário
+e não decisão, então já vem preenchida); login recupera a sessão inteira,
+decisões incluídas; "AJUSTES" grava as edições; "SAIR DA CONTA" desloga de
+verdade.
 
-Cada ação do circuito de decisão (marcar/desmarcar item da mochila, escolher
-partida, votar num recado) grava no Firestore na hora — silencioso, sem
-travar a navegação se a rede cair (a escrita fica enfileirada e sincroniza
-quando voltar).
+Cada ação de decisão (marcar/desmarcar item da mochila, escolher partida,
+votar num recado, convocar alguém, marcar quem leva o quê, escolher trilha/
+data, mandar mensagem) grava no Firestore na hora — silencioso, sem travar
+a navegação se a rede cair (a escrita fica enfileirada e sincroniza quando
+voltar). Selecionar um item pra ver detalhe (recado, recado de bastão em
+campo, peça de equipamento, carimbo) e o que ainda está sendo digitado
+(rascunho de recado/mensagem) são estado de tela, não decisão — não
+persistem, e não deveriam.
 
 ## Estrutura
 
@@ -78,8 +89,9 @@ lib/
       expedition_calculator.dart         Dart puro: peso, variantes de rota, day1Min, formatação
     models/
       user_profile_model.dart            o que persiste em users/{uid} no Firestore
-                                          (perfil + mochila + janela + bastão)
+                                          (perfil + mochila + janela + bastão + plano + cordada + chat)
       attr_model.dart                    um atributo físico (Resistência, Força…)
+      chat_message_model.dart            uma mensagem da cordada
     services/
       auth_service.dart                  fina camada sobre o Firebase Auth
       profile_repository.dart            fina camada sobre o Firestore (CRUD do perfil)

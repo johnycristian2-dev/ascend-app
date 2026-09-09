@@ -2,12 +2,14 @@ import 'package:flutter/foundation.dart';
 import '../data/relay_notes.dart';
 import '../data/weather_forecast.dart';
 import '../models/attr_model.dart';
+import '../models/chat_message_model.dart';
 import '../models/user_profile_model.dart';
 import '../services/auth_service.dart';
 import '../services/profile_repository.dart';
 import 'expedition_calculator.dart';
 
 export '../models/attr_model.dart' show Attr;
+export '../models/chat_message_model.dart' show Msg;
 
 const ranks = ['E', 'D', 'C', 'B', 'A', 'S'];
 
@@ -86,11 +88,7 @@ class ExpeditionState extends ChangeNotifier {
   ];
   static const deltas = [4, 3, 5, 2];
 
-  List<Msg> msgs = [
-    const Msg('KAI', '08:12', 'Saindo do abrigo agora. Vento forte na crista norte.', false),
-    const Msg('VOCÊ', '08:14', 'Copiado. Levo a corda extra de 60 m.', true),
-    const Msg('NINA', '08:20', 'Chego no ponto 2 em 40 min. Marquem no mapa.', false),
-  ];
+  List<Msg> msgs = List.of(seedMsgs);
 
   // ------------------------------------------------------------- derivados
 
@@ -208,6 +206,15 @@ class ExpeditionState extends ChangeNotifier {
     relayUsed
       ..clear()
       ..addAll(p.relayUsed);
+    planTrail = p.planTrail;
+    planDate = p.planDate;
+    invited
+      ..clear()
+      ..addAll(p.invited);
+    checked
+      ..clear()
+      ..addAll(p.checked);
+    msgs = p.msgs;
   }
 
   /// Grava o essencial do caderno no Firestore. Silencioso de propósito —
@@ -232,6 +239,11 @@ class ExpeditionState extends ChangeNotifier {
           if (e.value != null) '${e.key}': e.value!,
       },
       'relayUsed': relayUsed.toList(),
+      'planTrail': planTrail,
+      'planDate': planDate,
+      'invited': invited,
+      'checked': checked,
+      'msgs': msgs.map((m) => m.toMap()).toList(),
     }).catchError((_) {});
   }
 
@@ -365,14 +377,24 @@ class ExpeditionState extends ChangeNotifier {
 
   void toggleInvite(String k) {
     invited[k] = !(invited[k] ?? false);
+    _syncProfile();
     notifyListeners();
   }
   void toggleCheck(String k) {
     checked[k] = !(checked[k] ?? false);
+    _syncProfile();
     notifyListeners();
   }
-  void setPlanTrail(int i) { planTrail = i; notifyListeners(); }
-  void setPlanDate(int d) { planDate = d; notifyListeners(); }
+  void setPlanTrail(int i) {
+    planTrail = i;
+    _syncProfile();
+    notifyListeners();
+  }
+  void setPlanDate(int d) {
+    planDate = d;
+    _syncProfile();
+    notifyListeners();
+  }
   void openStamp(int? i) { stampIdx = stampIdx == i ? null : i; notifyListeners(); }
   void selectGear(String? id) { gearSel = gearSel == id ? null : id; notifyListeners(); }
   void cheer() { cheered = !cheered; notifyListeners(); }
@@ -382,6 +404,7 @@ class ExpeditionState extends ChangeNotifier {
     if (draft.trim().isEmpty) return;
     msgs = [...msgs, Msg('VOCÊ', '08:31', draft.trim(), true)];
     draft = '';
+    _syncProfile();
     notifyListeners();
   }
 
@@ -445,10 +468,4 @@ class ExpeditionState extends ChangeNotifier {
     _syncProfile();
     go('profile');
   }
-}
-
-class Msg {
-  final String who, time, text;
-  final bool me;
-  const Msg(this.who, this.time, this.text, this.me);
 }
