@@ -171,6 +171,13 @@ fluxo — é uma sobreposição acessível pelo ícone de relevo no topo do mapa
 exatamente como no protótipo (não entra no mapa `depth`). É de lá, não da
 tela de leitura em casa, que um recado de bastão nasce: "ANCORAR RECADO"
 abre o mesmo composer da tela `relay`, ancorado no ponto onde você está.
+"MARCAR" abre o **diário de bordo** (`ExpeditionState.logEntries` /
+`sendLogEntry`) — uma nota de texto por trecho, persistida no Firestore.
+Ao contrário do recado de bastão, não é compartilhada com ninguém nem
+reaparece em outra tela: no `.dc.html` original (`notes`/`logOpen`) ela
+também só existe dentro do próprio modal, revisável ali mesmo antes de
+escrever a próxima. Nota de voz (`addVoice` no protótipo) ficou de fora —
+precisaria gravar áudio de verdade.
 
 **SOS** (`SosScreen`, `ExpeditionState.sosOpen`) existia no protótipo
 original e nas conversas de design, mas ficou de fora do `ESPEC-Flutter.md`
@@ -262,12 +269,16 @@ omissão. Conferido direto no HTML e nas conversas de design
 
 - **SOS** ✅ agora implementado (ver "As 20 telas" acima) — não estava em
   nenhuma tela nem no ESPEC.
-- **Diário de bordo** (`openLog`/`MARCAR` no modo campo do protótipo:
-  nota de texto ou de voz por segmento, reaparece no resumo e na folha do
-  carimbo) — ainda não implementado. A parte de texto é factível do jeito
-  que fiz o resto; nota de **voz** precisaria gravar áudio de verdade
-  (pacote de microfone, permissão nativa), do mesmo tipo de risco que já
-  adiei pra foto de perfil.
+- **Diário de bordo** (`openLog`/`MARCAR` no modo campo do protótipo) ✅
+  a parte de **texto** agora está implementada: uma nota por trecho,
+  persistida no Firestore. Conferindo o `.dc.html` de novo para
+  implementar isto, a descrição anterior deste gap estava errada num
+  detalhe — `notes`/`logOpen` não reaparece em nenhum outro lugar do
+  protótipo (nem resumo, nem carimbo); vive só dentro do próprio modal
+  do diário, que é onde ficou aqui também. Nota de **voz** continua de
+  fora — precisaria gravar áudio de verdade (pacote de microfone,
+  permissão nativa), do mesmo tipo de risco que já adiei pra foto de
+  perfil.
 - **Rádio** (`openRadio`, ouvir transmissões da cordada no modo campo) —
   não implementado.
 - As 4 preferências reais de Ajustes do protótipo (alerta automático de

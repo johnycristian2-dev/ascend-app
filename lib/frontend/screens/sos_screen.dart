@@ -4,6 +4,7 @@ import '../app.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../../backend/data/sos_contacts.dart';
+import '../../backend/state/expedition_state.dart';
 
 /// Paleta exclusiva desta tela — vermelho-ferrugem, deliberadamente fora
 /// do sistema visual do resto do app (ver ESPEC-Flutter.md / chat de

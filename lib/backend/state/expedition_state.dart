@@ -5,6 +5,7 @@ import '../data/weather_forecast.dart';
 import '../models/attr_model.dart';
 import '../models/chat_message_model.dart';
 import '../models/gear_usage_model.dart';
+import '../models/log_entry_model.dart';
 import '../models/user_profile_model.dart';
 import '../services/auth_service.dart';
 import '../services/profile_repository.dart';
@@ -13,6 +14,7 @@ import 'expedition_calculator.dart';
 export '../models/attr_model.dart' show Attr;
 export '../models/chat_message_model.dart' show Msg;
 export '../models/gear_usage_model.dart' show GearUsage;
+export '../models/log_entry_model.dart' show LogEntry;
 
 const ranks = ['E', 'D', 'C', 'B', 'A', 'S'];
 
@@ -114,6 +116,10 @@ class ExpeditionState extends ChangeNotifier {
   static const deltas = [4, 3, 5, 2];
 
   List<Msg> msgs = List.of(seedMsgs);
+
+  /// Diário de bordo: notas escritas em campo, uma linha por trecho.
+  List<LogEntry> logEntries = [];
+  String logDraft = '';
 
   // ------------------------------------------------------------- derivados
 
@@ -254,6 +260,7 @@ class ExpeditionState extends ChangeNotifier {
       ..clear()
       ..addAll(p.checked);
     msgs = p.msgs;
+    logEntries = p.logEntries;
     gear
       ..clear()
       ..addAll(p.gear);
@@ -298,6 +305,7 @@ class ExpeditionState extends ChangeNotifier {
       'invited': invited,
       'checked': checked,
       'msgs': msgs.map((m) => m.toMap()).toList(),
+      'logEntries': logEntries.map((e) => e.toMap()).toList(),
       'gear': gear.map((k, v) => MapEntry(k, v.toMap())),
       'unlockedAchievements': unlockedAchievements.toList(),
       'photoUrl': photoUrl,
@@ -493,6 +501,28 @@ class ExpeditionState extends ChangeNotifier {
   }
   void cheer() { cheered = !cheered; notifyListeners(); }
   void setDraft(String v) { draft = v; notifyListeners(); }
+
+  void setLogDraft(String v) {
+    logDraft = v.length > 180 ? v.substring(0, 180) : v;
+    notifyListeners();
+  }
+
+  /// "REGISTRAR" no diário de bordo — uma linha sobre o trecho onde você
+  /// está agora (modo campo). Segmento fixo por ora, como no protótipo
+  /// (`VALE DAS PEDRAS`): o app ainda não deriva o nome do trecho atual
+  /// a partir de uma posição de verdade.
+  void sendLogEntry() {
+    final t = logDraft.trim();
+    if (t.isEmpty) return;
+    final now = DateTime.now();
+    final time =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    logEntries = [...logEntries, LogEntry('VALE DAS PEDRAS', time, t)];
+    logDraft = '';
+    _unlock('primeira_nota_diario');
+    _syncProfile();
+    notifyListeners();
+  }
 
   void send() {
     if (draft.trim().isEmpty) return;

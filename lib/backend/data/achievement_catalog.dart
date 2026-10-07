@@ -52,4 +52,9 @@ const achievementCatalog = <Achievement>[
     'NOVA CLASSIFICAÇÃO',
     'Seu rank subiu pela primeira vez.',
   ),
+  Achievement(
+    'primeira_nota_diario',
+    'DIÁRIO DE BORDO',
+    'Você registrou sua primeira nota no diário de bordo, em campo.',
+  ),
 ];

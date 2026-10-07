@@ -2,6 +2,7 @@ import '../data/gear_catalog.dart';
 import 'attr_model.dart';
 import 'chat_message_model.dart';
 import 'gear_usage_model.dart';
+import 'log_entry_model.dart';
 
 /// Conversa inicial de toda cordada recém-formada — a mesma que o
 /// protótipo sempre mostrou. Flavor, não uma decisão do usuário: por
@@ -55,6 +56,10 @@ class UserProfile {
   /// Histórico da conversa da cordada.
   final List<Msg> msgs;
 
+  /// Diário de bordo: notas escritas em campo ("MARCAR" no modo campo),
+  /// uma linha por trecho — ver `log_entry_model.dart`.
+  final List<LogEntry> logEntries;
+
   /// Uso registrado de cada peça de equipamento, por id do catálogo
   /// (`GearItem.id`, em gear_catalog.dart). Ausente = conta anterior a
   /// este campo — ver `ExpeditionState.gearUsage`.
@@ -106,6 +111,7 @@ class UserProfile {
     this.invited = const {},
     this.checked = const {},
     this.msgs = seedMsgs,
+    this.logEntries = const [],
     this.gear = const {},
     this.unlockedAchievements = const [],
     this.photoUrl = '',
@@ -164,6 +170,7 @@ class UserProfile {
     Map<String, bool>? invited,
     Map<String, bool>? checked,
     List<Msg>? msgs,
+    List<LogEntry>? logEntries,
     Map<String, GearUsage>? gear,
     List<String>? unlockedAchievements,
     String? photoUrl,
@@ -193,6 +200,7 @@ class UserProfile {
         invited: invited ?? this.invited,
         checked: checked ?? this.checked,
         msgs: msgs ?? this.msgs,
+        logEntries: logEntries ?? this.logEntries,
         gear: gear ?? this.gear,
         unlockedAchievements: unlockedAchievements ?? this.unlockedAchievements,
         photoUrl: photoUrl ?? this.photoUrl,
@@ -222,6 +230,7 @@ class UserProfile {
         'invited': invited,
         'checked': checked,
         'msgs': msgs.map((m) => m.toMap()).toList(),
+        'logEntries': logEntries.map((e) => e.toMap()).toList(),
         'gear': gear.map((k, v) => MapEntry(k, v.toMap())),
         'unlockedAchievements': unlockedAchievements,
         'photoUrl': photoUrl,
@@ -264,6 +273,10 @@ class UserProfile {
                 ?.map((e) => Msg.fromMap(Map<String, dynamic>.from(e as Map)))
                 .toList() ??
             seedMsgs,
+        logEntries: (m['logEntries'] as List?)
+                ?.map((e) => LogEntry.fromMap(Map<String, dynamic>.from(e as Map)))
+                .toList() ??
+            const [],
         gear: (m['gear'] as Map?)?.map(
               (k, v) => MapEntry(k as String, GearUsage.fromMap(Map<String, dynamic>.from(v as Map))),
             ) ??
