@@ -198,16 +198,17 @@ class ExpeditionState extends ChangeNotifier {
   // -------------------------------------------------------------- comandos
 
   static const depth = {
-    'splash': 0, 'auth': 0, 'onboard': 1, 'home': 1, 'chat': 1, 'profile': 1,
-    'inv': 2, 'ach': 2, 'history': 2, 'settings': 2, 'discover': 2, 'route': 2,
+    'splash': 0, 'auth': 0, 'onboard': 1, 'home': 1, 'chat': 1, 'profile': 1, 'inv': 1,
+    'ach': 2, 'history': 2, 'settings': 2, 'discover': 2, 'route': 2,
     'plan': 2, 'watch': 2, 'relay': 2, 'party': 3, 'summary': 3, 'window': 3,
     'rankup': 4, 'pack': 4,
   };
 
-  /// Aba raiz destacada para telas mais profundas.
+  /// Aba raiz destacada para telas mais profundas. `inv` virou aba própria
+  /// na barra inferior — deixou de ser filha de `profile` (ver BottomNav).
   String get activeTab {
     const toHome = ['route', 'discover', 'party', 'plan', 'watch', 'window', 'pack', 'relay'];
-    const toProfile = ['rankup', 'summary', 'settings', 'history', 'inv', 'ach'];
+    const toProfile = ['rankup', 'summary', 'settings', 'history', 'ach'];
     if (toHome.contains(screen)) return 'home';
     if (toProfile.contains(screen)) return 'profile';
     return screen;

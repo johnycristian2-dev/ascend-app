@@ -14,9 +14,7 @@ class InventoryScreen extends StatelessWidget {
     final s = Expedition.of(c);
     return Column(
       children: [
-        ScreenBar('EQUIPAMENTO',
-            sub: '${gearData.length} peças registradas',
-            onBack: () => s.go('profile')),
+        ScreenBar('EQUIPAMENTO', sub: '${gearData.length} peças registradas'),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 26),

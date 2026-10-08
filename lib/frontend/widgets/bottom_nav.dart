@@ -9,6 +9,7 @@ class BottomNav extends StatelessWidget {
 
   static const _items = [
     ('home', 'MAPA', Icons.terrain),
+    ('inv', 'ITENS', Icons.backpack_outlined),
     ('chat', 'CORDADA', Icons.forum_outlined),
     ('profile', 'CADERNO', Icons.menu_book_outlined),
   ];

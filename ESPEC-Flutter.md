@@ -54,14 +54,19 @@ O protótipo usa um `depth` por tela para escolher a direção da animação (en
 | depth | telas |
 |---|---|
 | 0 | `splash`, `auth` |
-| 1 | `onboard`, `home`, `chat`, `profile` |
-| 2 | `inv`, `ach`, `history`, `settings`, `discover`, `route`, `plan`, `watch`, `relay` |
+| 1 | `onboard`, `home`, `chat`, `profile`, `inv` |
+| 2 | `ach`, `history`, `settings`, `discover`, `route`, `plan`, `watch`, `relay` |
 | 3 | `party`, `summary`, `window` |
 | 4 | `rankup`, `pack` |
 
 `splash` roda um boot de 0→100 em passos de 4 a cada 70 ms e cai em `auth`.
 
-Barra inferior: `home` | `chat` | `profile`. Telas de depth ≥2 mantêm a aba raiz destacada (`route`/`discover`/`plan`/`window`/`pack`/`relay` → home; `rankup`/`summary`/`settings`/`history` → profile).
+Barra inferior: `home` | `inv` | `chat` | `profile` — 4 abas, não 3; `inv`
+(Equipamento) virou aba raiz a pedido do usuário, em vez de ficar só
+alcançável pelo botão "EQUIPAMENTO" dentro de `profile`. Telas de depth
+≥2 mantêm a aba raiz destacada (`route`/`discover`/`plan`/`window`/
+`pack`/`relay` → home; `rankup`/`summary`/`settings`/`history` → profile;
+`ach` também → profile, continua filha dele — só `inv` subiu de nível).
 
 Duas sobreposições ficam **fora** desse mapa (não usam `depth`/`go`, não entram na barra inferior): o modo campo (`fieldMode`) e o SOS (`sosOpen`), aberto de dentro do modo campo e empilhado por cima dele. O SOS existia no protótipo original (`sosOpen`/`openSos`/`closeSos` no `.dc.html`) mas esta lista de 20 telas, escrita antes de eu revisar o protótipo com atenção, não o incluiu — é um gap desta especificação, não do protótipo.
 
