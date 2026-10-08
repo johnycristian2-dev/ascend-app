@@ -177,7 +177,12 @@ Ao contrário do recado de bastão, não é compartilhada com ninguém nem
 reaparece em outra tela: no `.dc.html` original (`notes`/`logOpen`) ela
 também só existe dentro do próprio modal, revisável ali mesmo antes de
 escrever a próxima. Nota de voz (`addVoice` no protótipo) ficou de fora —
-precisaria gravar áudio de verdade.
+precisaria gravar áudio de verdade. "RÁDIO" abre o **rádio de cordada**
+(`radio_composer.dart`, `ExpeditionState.radios`) — ao contrário do
+diário, esse grava mesmo: `record` captura o microfone (até 10 s,
+soltar o botão fecha antes), `audioplayers` toca de volta. Também abre
+pelo ícone de rádio no cabeçalho do mapa (`home_screen.dart`), os dois
+pontos de entrada do protótipo.
 
 **SOS** (`SosScreen`, `ExpeditionState.sosOpen`) existia no protótipo
 original e nas conversas de design, mas ficou de fora do `ESPEC-Flutter.md`
@@ -279,8 +284,23 @@ omissão. Conferido direto no HTML e nas conversas de design
   fora — precisaria gravar áudio de verdade (pacote de microfone,
   permissão nativa), do mesmo tipo de risco que já adiei pra foto de
   perfil.
-- **Rádio** (`openRadio`, ouvir transmissões da cordada no modo campo) —
-  não implementado.
+- **Rádio** (`openRadio`, no mapa e no modo campo) ✅ implementado — e,
+  ao conferir o `.dc.html`, essa descrição do gap também estava errada:
+  não é "ouvir transmissões", é um walkie-talkie — você segura o botão
+  pra **gravar sua própria voz** (`recordVoice`/`stopVoice`/`pinRadio`),
+  até 10 s, e o recado entra na lista do trecho. Diferente de SOS e do
+  diário, aqui a gravação é de verdade (microfone real via pacote
+  `record`, tocada de volta com `audioplayers`) — dava pra fazer porque,
+  ao contrário das sessões anteriores que escreveram este README, esta
+  teve o SDK do Flutter disponível pra testar. Os dois pontos de entrada
+  do protótipo foram implementados: o ícone no cabeçalho do mapa e o
+  botão "RÁDIO" no modo campo. O áudio persiste como base64 no próprio
+  documento do Firestore (não há Storage configurado no projeto) — cabe
+  bem num clipe de 10 s em Opus/WebM, mas por ser gravação de verdade
+  (não decoração), cada recado pesa bem mais que o resto do caderno; se
+  isso virar um uso real, vale migrar pra Firebase Storage. Só Web foi
+  testado (único alvo que dá pra rodar neste ambiente); Android/iOS/
+  desktop devem funcionar com o mesmo pacote, mas sem verificação.
 - As 4 preferências reais de Ajustes do protótipo (alerta automático de
   SOS, compartilhar posição, mapas offline, notas de voz por segmento)
   viraram, na reconstrução, um painel "PRIVACIDADE" com conteúdo

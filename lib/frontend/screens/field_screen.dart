@@ -3,12 +3,14 @@ import '../app.dart';
 import '../../backend/state/expedition_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../widgets/radio_composer.dart';
 import '../widgets/widgets.dart';
 
-/// Modo campo: tipografia gigante, três controles, usável com luva e vento.
+/// Modo campo: tipografia gigante, cinco controles, usável com luva e vento.
 /// É daqui — não da tela de leitura em casa — que um recado de bastão nasce:
 /// ancorado no ponto exato onde você está agora. É daqui também que se abre
-/// o SOS (ver sos_screen.dart) — mesma lógica do protótipo original.
+/// o SOS (ver sos_screen.dart) e o rádio de cordada (ver radio_composer.dart)
+/// — mesma lógica do protótipo original.
 class FieldScreen extends StatelessWidget {
   const FieldScreen({super.key});
 
@@ -107,6 +109,14 @@ class FieldScreen extends StatelessWidget {
                   label: 'MARCAR',
                   color: AppColors.green,
                   onTap: () => _openLog(c, s),
+                ),
+              ),
+              Container(width: 1, height: 68, color: AppColors.border),
+              Expanded(
+                child: _FieldBtn(
+                  label: 'RÁDIO',
+                  color: AppColors.blue,
+                  onTap: () => openRadioComposer(c),
                 ),
               ),
               Container(width: 1, height: 68, color: AppColors.border),

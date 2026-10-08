@@ -3,6 +3,7 @@ import '../app.dart';
 import '../../backend/state/expedition_calculator.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../widgets/radio_composer.dart';
 import '../widgets/widgets.dart';
 
 /// Mapa da trilha: o painel de comando da expedição ativa.
@@ -56,6 +57,21 @@ class HomeScreen extends StatelessWidget {
                   borderRadius: r4,
                 ),
                 child: const Icon(Icons.terrain, size: 17, color: AppColors.text2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: () => openRadioComposer(c),
+              borderRadius: r4,
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: r4,
+                ),
+                child: const Icon(Icons.radio_outlined, size: 17, color: AppColors.text2),
               ),
             ),
           ],

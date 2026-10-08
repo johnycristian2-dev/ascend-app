@@ -57,4 +57,9 @@ const achievementCatalog = <Achievement>[
     'DIÁRIO DE BORDO',
     'Você registrou sua primeira nota no diário de bordo, em campo.',
   ),
+  Achievement(
+    'primeiro_radio',
+    'SINAL NO VALE',
+    'Você gravou e deixou seu primeiro recado de rádio pra cordada.',
+  ),
 ];

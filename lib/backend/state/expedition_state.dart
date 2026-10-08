@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import '../data/gear_catalog.dart';
 import '../data/relay_notes.dart';
@@ -6,28 +8,42 @@ import '../models/attr_model.dart';
 import '../models/chat_message_model.dart';
 import '../models/gear_usage_model.dart';
 import '../models/log_entry_model.dart';
+import '../models/radio_message_model.dart';
 import '../models/user_profile_model.dart';
 import '../services/auth_service.dart';
 import '../services/profile_repository.dart';
+import '../services/radio_service.dart';
 import 'expedition_calculator.dart';
 
 export '../models/attr_model.dart' show Attr;
 export '../models/chat_message_model.dart' show Msg;
 export '../models/gear_usage_model.dart' show GearUsage;
 export '../models/log_entry_model.dart' show LogEntry;
+export '../models/radio_message_model.dart' show RadioMessage;
 
 const ranks = ['E', 'D', 'C', 'B', 'A', 'S'];
 
 /// Estado global. As telas de decisão escrevem aqui; todo o resto é derivado.
 class ExpeditionState extends ChangeNotifier {
-  ExpeditionState({AuthService? auth, ProfileRepository? profiles})
+  ExpeditionState({AuthService? auth, ProfileRepository? profiles, RadioService? radioService})
       : auth = auth ?? AuthService(),
-        profiles = profiles ?? ProfileRepository();
+        profiles = profiles ?? ProfileRepository(),
+        radioService = radioService ?? RadioService();
 
   /// Serviços de backend — a UI só fala com eles através dos métodos
   /// abaixo (signIn/signUp/signOut/completeOnboarding), nunca direto.
   final AuthService auth;
   final ProfileRepository profiles;
+  final RadioService radioService;
+  final AudioPlayer _player = AudioPlayer();
+
+  @override
+  void dispose() {
+    _radioTimer?.cancel();
+    _player.dispose();
+    radioService.dispose();
+    super.dispose();
+  }
 
   /// uid do Firebase Auth da sessão atual. Nulo até logar.
   String? uid;
@@ -120,6 +136,19 @@ class ExpeditionState extends ChangeNotifier {
   /// Diário de bordo: notas escritas em campo, uma linha por trecho.
   List<LogEntry> logEntries = [];
   String logDraft = '';
+
+  /// Recados de rádio — gravação de verdade (ver `radio_service.dart`),
+  /// ao contrário do resto dos dados de demonstração do app.
+  List<RadioMessage> radios = [];
+  bool radioRecording = false;
+
+  /// Segundos gravados nesta tomada (0 a 10 — o protótipo limita a 10 s).
+  int radioRecSec = 0;
+  String? radioError;
+
+  /// `id` da mensagem tocando agora, se houver — ver `playRadio`.
+  String? radioPlayingId;
+  Timer? _radioTimer;
 
   // ------------------------------------------------------------- derivados
 
@@ -261,6 +290,7 @@ class ExpeditionState extends ChangeNotifier {
       ..addAll(p.checked);
     msgs = p.msgs;
     logEntries = p.logEntries;
+    radios = p.radios;
     gear
       ..clear()
       ..addAll(p.gear);
@@ -306,6 +336,7 @@ class ExpeditionState extends ChangeNotifier {
       'checked': checked,
       'msgs': msgs.map((m) => m.toMap()).toList(),
       'logEntries': logEntries.map((e) => e.toMap()).toList(),
+      'radios': radios.map((r) => r.toMap()).toList(),
       'gear': gear.map((k, v) => MapEntry(k, v.toMap())),
       'unlockedAchievements': unlockedAchievements.toList(),
       'photoUrl': photoUrl,
@@ -522,6 +553,110 @@ class ExpeditionState extends ChangeNotifier {
     _unlock('primeira_nota_diario');
     _syncProfile();
     notifyListeners();
+  }
+
+  /// "Mantenha pressionado" no rádio de cordada — grava de verdade (ver
+  /// `radio_service.dart`), até 10 s, como no protótipo. Web apenas por
+  /// ora: é a única plataforma que dá pra testar sem SDK nativo aqui.
+  Future<void> startRadioRecording() async {
+    radioError = null;
+    if (!kIsWeb) {
+      radioError = 'Gravação só funciona na versão web deste app por enquanto.';
+      notifyListeners();
+      return;
+    }
+    if (!await radioService.hasPermission()) {
+      radioError = 'Permissão de microfone negada — ative nas configurações do navegador.';
+      notifyListeners();
+      return;
+    }
+    try {
+      await radioService.start();
+    } catch (_) {
+      radioError = 'Não deu para começar a gravar. Tente de novo.';
+      notifyListeners();
+      return;
+    }
+    radioRecording = true;
+    radioRecSec = 0;
+    notifyListeners();
+    _radioTimer?.cancel();
+    _radioTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      radioRecSec++;
+      if (radioRecSec >= 10) {
+        timer.cancel();
+        stopRadioRecording();
+      } else {
+        notifyListeners();
+      }
+    });
+  }
+
+  /// Solta o botão: fecha a gravação e pina o recado no topo da lista
+  /// (`pinRadio` no protótipo) — mínimo de 1 s, pra não gravar vazio.
+  Future<void> stopRadioRecording() async {
+    _radioTimer?.cancel();
+    if (!radioRecording) return;
+    final sec = radioRecSec.clamp(1, 10);
+    radioRecording = false;
+    radioRecSec = 0;
+    try {
+      final cap = await radioService.stop();
+      if (cap != null && cap.bytes.isNotEmpty) {
+        radios = [
+          RadioMessage(
+            id: DateTime.now().microsecondsSinceEpoch.toString(),
+            who: 'VOCÊ',
+            at: 'SELA DOS DOIS IRMÃOS · 2 180 m',
+            time: 'agora',
+            durationSec: sec,
+            audioBase64: cap.base64,
+            mime: cap.mime,
+            pending: true,
+          ),
+          ...radios,
+        ];
+        _unlock('primeiro_radio');
+        _syncProfile();
+      }
+    } catch (_) {
+      radioError = 'Não deu para salvar a gravação.';
+    }
+    notifyListeners();
+  }
+
+  /// Soltar antes de gravar nada de fato (ex.: permissão negou no meio).
+  void cancelRadioRecording() {
+    _radioTimer?.cancel();
+    if (!radioRecording) return;
+    radioRecording = false;
+    radioRecSec = 0;
+    radioService.cancel();
+    notifyListeners();
+  }
+
+  /// Toca (ou para, se já for a que está tocando) um recado de rádio.
+  Future<void> playRadio(RadioMessage m) async {
+    if (radioPlayingId == m.id) {
+      await _player.stop();
+      radioPlayingId = null;
+      notifyListeners();
+      return;
+    }
+    radioPlayingId = m.id;
+    notifyListeners();
+    try {
+      await _player.play(UrlSource('data:${m.mime};base64,${m.audioBase64}'));
+      unawaited(_player.onPlayerComplete.first.then((_) {
+        if (radioPlayingId == m.id) {
+          radioPlayingId = null;
+          notifyListeners();
+        }
+      }));
+    } catch (_) {
+      radioPlayingId = null;
+      notifyListeners();
+    }
   }
 
   void send() {

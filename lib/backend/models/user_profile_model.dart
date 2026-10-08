@@ -3,6 +3,7 @@ import 'attr_model.dart';
 import 'chat_message_model.dart';
 import 'gear_usage_model.dart';
 import 'log_entry_model.dart';
+import 'radio_message_model.dart';
 
 /// Conversa inicial de toda cordada recém-formada — a mesma que o
 /// protótipo sempre mostrou. Flavor, não uma decisão do usuário: por
@@ -60,6 +61,10 @@ class UserProfile {
   /// uma linha por trecho — ver `log_entry_model.dart`.
   final List<LogEntry> logEntries;
 
+  /// Recados de rádio gravados ("RÁDIO" no mapa ou no modo campo) — ver
+  /// `radio_message_model.dart`.
+  final List<RadioMessage> radios;
+
   /// Uso registrado de cada peça de equipamento, por id do catálogo
   /// (`GearItem.id`, em gear_catalog.dart). Ausente = conta anterior a
   /// este campo — ver `ExpeditionState.gearUsage`.
@@ -112,6 +117,7 @@ class UserProfile {
     this.checked = const {},
     this.msgs = seedMsgs,
     this.logEntries = const [],
+    this.radios = const [],
     this.gear = const {},
     this.unlockedAchievements = const [],
     this.photoUrl = '',
@@ -171,6 +177,7 @@ class UserProfile {
     Map<String, bool>? checked,
     List<Msg>? msgs,
     List<LogEntry>? logEntries,
+    List<RadioMessage>? radios,
     Map<String, GearUsage>? gear,
     List<String>? unlockedAchievements,
     String? photoUrl,
@@ -201,6 +208,7 @@ class UserProfile {
         checked: checked ?? this.checked,
         msgs: msgs ?? this.msgs,
         logEntries: logEntries ?? this.logEntries,
+        radios: radios ?? this.radios,
         gear: gear ?? this.gear,
         unlockedAchievements: unlockedAchievements ?? this.unlockedAchievements,
         photoUrl: photoUrl ?? this.photoUrl,
@@ -231,6 +239,7 @@ class UserProfile {
         'checked': checked,
         'msgs': msgs.map((m) => m.toMap()).toList(),
         'logEntries': logEntries.map((e) => e.toMap()).toList(),
+        'radios': radios.map((r) => r.toMap()).toList(),
         'gear': gear.map((k, v) => MapEntry(k, v.toMap())),
         'unlockedAchievements': unlockedAchievements,
         'photoUrl': photoUrl,
@@ -275,6 +284,10 @@ class UserProfile {
             seedMsgs,
         logEntries: (m['logEntries'] as List?)
                 ?.map((e) => LogEntry.fromMap(Map<String, dynamic>.from(e as Map)))
+                .toList() ??
+            const [],
+        radios: (m['radios'] as List?)
+                ?.map((e) => RadioMessage.fromMap(Map<String, dynamic>.from(e as Map)))
                 .toList() ??
             const [],
         gear: (m['gear'] as Map?)?.map(
