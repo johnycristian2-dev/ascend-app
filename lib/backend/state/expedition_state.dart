@@ -73,6 +73,13 @@ class ExpeditionState extends ChangeNotifier {
   /// expedition_calculator.dart).
   int recordAltimetriaM = baseM;
 
+  /// Ganho real da ÚLTIMA travessia concluída (`finish()`), só para a
+  /// tela de resumo exibir — nunca persistido, nunca somado de novo.
+  int lastXpGain = 0;
+  int lastElevGain = 0;
+  AttrGains lastAttrGains = const AttrGains(0, 0, 0);
+  bool lastAltitudeRecord = false;
+
   String name = 'Jota';
   String baseName = 'São Bento do Sapucaí';
   String units = 'métrico';
@@ -690,7 +697,8 @@ class ExpeditionState extends ChangeNotifier {
   void finish() {
     final c = core;
     final dificuldade = dificuldadeDe(trail);
-    xpTotal += xpGanho(km: c.km, m: c.m, dificuldade: dificuldade);
+    final xpGain = xpGanho(km: c.km, m: c.m, dificuldade: dificuldade);
+    xpTotal += xpGain;
 
     final gains = attrGains(km: c.km, m: c.m, tecnica: isTecnica(trail));
     final novoRecorde = c.m > recordAltimetriaM;
@@ -703,6 +711,13 @@ class ExpeditionState extends ChangeNotifier {
       if (novoRecorde) attrs[3].bump(3) else attrs[3],
     ];
     if (novoRecorde) recordAltimetriaM = c.m;
+
+    // Guardado só para a tela de resumo mostrar o ganho de verdade desta
+    // travessia, já que attrs/xpTotal acima já viraram o total acumulado.
+    lastXpGain = xpGain;
+    lastElevGain = c.m;
+    lastAttrGains = gains;
+    lastAltitudeRecord = novoRecorde;
 
     elev = (elev + c.m).clamp(0, elevGoal);
     pending = elev >= elevGoal;
