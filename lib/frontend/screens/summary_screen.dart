@@ -28,9 +28,16 @@ class SummaryScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const AppLabel('DESNÍVEL REGISTRADO', color: AppColors.green, size: 9, tracking: 0.26),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const AppLabel('DESNÍVEL REGISTRADO', color: AppColors.green, size: 9, tracking: 0.26),
+                        AppLabel('+${s.lastXpGain} XP', color: AppColors.green, size: 9, tracking: 0.26),
+                      ],
+                    ),
                     const SizedBox(height: 8),
-                    Text('+1 640 m', style: AppTypography.num(size: 38, color: AppColors.textStrong)),
+                    Text('+${fmtMil(s.lastElevGain)} m',
+                        style: AppTypography.num(size: 38, color: AppColors.textStrong)),
                     const SizedBox(height: 10),
                     Text(
                       s.pending
@@ -72,18 +79,31 @@ class SummaryScreen extends StatelessWidget {
                   children: [
                     const AppLabel('ATRIBUTOS · GANHO'),
                     const SizedBox(height: 12),
-                    ...List.generate(s.attrs.length, (i) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Row(
-                            children: [
-                              Expanded(child: AppLabel(s.attrs[i].nome, color: AppColors.text2, size: 9)),
-                              Text('+${ExpeditionStateDeltas.of(i)}',
-                                  style: AppTypography.num(size: 13, color: AppColors.green)),
-                              const SizedBox(width: 10),
-                              Text('${s.attrs[i].val}', style: AppTypography.num(size: 13)),
-                            ],
-                          ),
-                        )),
+                    ...List.generate(s.attrs.length, (i) {
+                      // Ganho real desta travessia (ver finish() em
+                      // expedition_state.dart) — altitude é um recorde, só
+                      // bate quando ESTA travessia superou o melhor já feito.
+                      final delta = switch (i) {
+                        0 => s.lastAttrGains.resistencia,
+                        1 => s.lastAttrGains.forca,
+                        2 => s.lastAttrGains.tecnica,
+                        _ => s.lastAltitudeRecord ? 3 : 0,
+                      };
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Row(
+                          children: [
+                            Expanded(child: AppLabel(s.attrs[i].nome, color: AppColors.text2, size: 9)),
+                            Text(delta > 0 ? '+$delta' : '—',
+                                style: AppTypography.num(
+                                    size: 13,
+                                    color: delta > 0 ? AppColors.green : AppColors.dim)),
+                            const SizedBox(width: 10),
+                            Text('${s.attrs[i].val}', style: AppTypography.num(size: 13)),
+                          ],
+                        ),
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -170,9 +190,4 @@ class SummaryScreen extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Ganho fixo por atributo, espelhando o protótipo.
-class ExpeditionStateDeltas {
-  static int of(int i) => const [4, 3, 5, 2][i];
 }
