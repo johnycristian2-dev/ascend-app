@@ -229,3 +229,79 @@ RouteTrust computeRouteTrust(Map<int, String?> votes) {
   final pct = weightTotal == 0 ? 100 : (weightedSum / weightTotal * 100).round();
   return RouteTrust(pct, freshest, stalest);
 }
+
+// ------------------------------------------------------------- XP e rank real
+//
+// Fórmula do planejamento original (CLAUDE.md / ascend_modelo_dados_xp.md),
+// aplicada aos dados REAIS da rota resultante das decisões da cordada
+// (core.km / core.m de `linkCore`), não mais a um incremento fixo.
+
+enum Dificuldade { facil, moderada, dificil, extrema }
+
+const _dificuldadeMultiplicador = {
+  Dificuldade.facil: 1.0,
+  Dificuldade.moderada: 1.3,
+  Dificuldade.dificil: 1.6,
+  Dificuldade.extrema: 2.0,
+};
+
+/// XP_ganho = (distanciaKm × 10 + altimetriaM × 0,5) × multiplicador_dificuldade.
+int xpGanho({required double km, required int m, required Dificuldade dificuldade}) {
+  final base = km * 10 + m * 0.5;
+  return (base * _dificuldadeMultiplicador[dificuldade]!).round();
+}
+
+/// Dificuldade desta expedição, a partir da condição real da trilha
+/// (`TrailState`). Aproximação documentada: a Travessia Ruy Braga já é uma
+/// travessia técnica de crista de 2 dias mesmo em condição seca, então
+/// nunca cai em "fácil" — só neve/gelo, que também exigem rank técnico
+/// (`CondInfo.need`), contam como "trilha técnica" para o bônus de
+/// Técnica em [attrGains].
+Dificuldade dificuldadeDe(TrailState trail) {
+  switch (trail) {
+    case TrailState.seca:
+    case TrailState.lama:
+      return Dificuldade.moderada;
+    case TrailState.neve:
+      return Dificuldade.dificil;
+    case TrailState.gelo:
+      return Dificuldade.extrema;
+  }
+}
+
+/// Trilha "técnica/escalada", no sentido do bônus de Técnica do
+/// planejamento original: condição que já exige rank técnico (crampons/
+/// piolet) para seguir com segurança.
+bool isTecnica(TrailState trail) => condData[trail]!.need > 0;
+
+/// Faixas de rank por XP acumulado total (CLAUDE.md):
+/// E 0–999 · D 1.000–2.999 · C 3.000–6.999 · B 7.000–14.999 ·
+/// A 15.000–29.999 · S 30.000+.
+const rankThresholds = [0, 1000, 3000, 7000, 15000, 30000];
+
+/// Índice de rank (0=E .. 5=S) a partir do XP acumulado total.
+int rankIdxForXp(int xpTotal) {
+  var idx = 0;
+  for (var i = 0; i < rankThresholds.length; i++) {
+    if (xpTotal >= rankThresholds[i]) idx = i;
+  }
+  return idx;
+}
+
+/// Ganho de atributos de uma travessia concluída (regra do planejamento
+/// original): Resistência += distância_km × 0,3; Força += altimetria_m ×
+/// 0,02; Técnica += 5 se a trilha for técnica/escalada.
+///
+/// Altitude máxima fica de fora de propósito: é um recorde, não uma soma
+/// (ver `ExpeditionState.recordAltimetriaM`), então não entra numa fórmula
+/// de "ganho por trilha" igual às outras três.
+class AttrGains {
+  final int resistencia;
+  final int forca;
+  final int tecnica;
+  const AttrGains(this.resistencia, this.forca, this.tecnica);
+}
+
+AttrGains attrGains({required double km, required int m, required bool tecnica}) {
+  return AttrGains((km * 0.3).round(), (m * 0.02).round(), tecnica ? 5 : 0);
+}

@@ -159,4 +159,51 @@ void main() {
       expect(fmtDec(28.4), '28,4');
     });
   });
+
+  group('xp e rank real', () {
+    test('xpGanho aplica a fórmula e o multiplicador de dificuldade', () {
+      // (28,4×10 + 1640×0,5) × 1,3 (moderada) = (284 + 820) × 1,3 = 1435,2 → 1435
+      expect(xpGanho(km: 28.4, m: 1640, dificuldade: Dificuldade.moderada), 1435);
+      // mesma rota em dificuldade extrema: ×2,0 = 2208
+      expect(xpGanho(km: 28.4, m: 1640, dificuldade: Dificuldade.extrema), 2208);
+    });
+
+    test('dificuldadeDe mapeia a condição real da trilha', () {
+      expect(dificuldadeDe(TrailState.seca), Dificuldade.moderada);
+      expect(dificuldadeDe(TrailState.lama), Dificuldade.moderada);
+      expect(dificuldadeDe(TrailState.neve), Dificuldade.dificil);
+      expect(dificuldadeDe(TrailState.gelo), Dificuldade.extrema);
+    });
+
+    test('isTecnica só é true quando a condição exige rank técnico', () {
+      for (final t in TrailState.values) {
+        expect(isTecnica(t), condData[t]!.need > 0);
+      }
+    });
+
+    test('rankIdxForXp respeita os limiares cumulativos de CLAUDE.md', () {
+      expect(rankIdxForXp(0), 0); // E
+      expect(rankIdxForXp(999), 0); // E
+      expect(rankIdxForXp(1000), 1); // D
+      expect(rankIdxForXp(2999), 1); // D
+      expect(rankIdxForXp(3000), 2); // C
+      expect(rankIdxForXp(6999), 2); // C
+      expect(rankIdxForXp(7000), 3); // B
+      expect(rankIdxForXp(14999), 3); // B
+      expect(rankIdxForXp(15000), 4); // A
+      expect(rankIdxForXp(29999), 4); // A
+      expect(rankIdxForXp(30000), 5); // S
+      expect(rankIdxForXp(999999), 5); // S
+    });
+
+    test('attrGains soma resistência/força e bônus fixo de técnica', () {
+      final g = attrGains(km: 28.4, m: 1640, tecnica: false);
+      expect(g.resistencia, (28.4 * 0.3).round());
+      expect(g.forca, (1640 * 0.02).round());
+      expect(g.tecnica, 0);
+
+      final gTec = attrGains(km: 28.4, m: 1640, tecnica: true);
+      expect(gTec.tecnica, 5);
+    });
+  });
 }
