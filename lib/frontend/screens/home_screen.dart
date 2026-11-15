@@ -78,30 +78,11 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 14),
 
-        // Relevo da rota — placeholder do mapa real.
-        Container(
-          height: 128,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceAlt,
-            border: Border.all(color: AppColors.border),
-            borderRadius: r4,
-          ),
-          child: Stack(
-            children: [
-              Positioned.fill(child: CustomPaint(painter: _RidgePainter())),
-              const Positioned(
-                left: 11,
-                top: 10,
-                child: AppLabel('PERFIL DO RELEVO · DIA 1',
-                    color: AppColors.dim, size: 8, tracking: 0.26),
-              ),
-              Positioned(
-                right: 11,
-                bottom: 10,
-                child: AppLabel(cond.label, color: AppColors.tagInks[0], size: 8, tracking: 0.16),
-              ),
-            ],
-          ),
+        // Mapa real (OpenStreetMap), centrado no Pico Paraná — ver route_map.dart.
+        RouteMap(
+          labelTopLeft: 'MAPA · PICO PARANÁ',
+          labelBottomRight: cond.label,
+          labelBottomRightColor: AppColors.tagInks[0],
         ),
         const SizedBox(height: 10),
 
@@ -291,32 +272,4 @@ class _EmptyHome extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Silhueta de crista — marcador de onde entra o mapa de relevo real.
-class _RidgePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Path()..moveTo(0, size.height * .82);
-    final pts = [.62, .74, .48, .66, .34, .52, .22, .40, .28];
-    for (var i = 0; i < pts.length; i++) {
-      p.lineTo(size.width * (i + 1) / pts.length, size.height * pts[i]);
-    }
-    p
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(
-        p, Paint()..color = const Color(0xFF20252B));
-    canvas.drawPath(
-      p,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
-        ..color = const Color(0xFF4E5A48),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
 }
