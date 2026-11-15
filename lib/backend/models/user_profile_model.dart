@@ -31,6 +31,15 @@ class UserProfile {
   final int rankIdx;
   final List<Attr> attrs;
 
+  /// XP acumulado de verdade (fórmula de `expedition_calculator.dart`),
+  /// não mais um incremento fixo — é o que decide `rankIdx` via
+  /// `rankIdxForXp`. Ver ESPEC-Flutter.md / CLAUDE.md.
+  final int xpTotal;
+
+  /// Recorde de altitude máxima já alcançado numa travessia — substitui
+  /// a soma cumulativa de `elev`: é um máximo, não um total.
+  final int recordAltimetriaM;
+
   /// Itens deixados em casa, pelo NOME — ver ESPEC-Flutter.md §3.
   final List<String> packOut;
 
@@ -107,6 +116,8 @@ class UserProfile {
     required this.elevGoal,
     required this.rankIdx,
     required this.attrs,
+    this.xpTotal = 0,
+    this.recordAltimetriaM = 0,
     this.packOut = const [],
     this.wxPick = 0,
     this.relayVotes = const {},
@@ -167,6 +178,8 @@ class UserProfile {
     int? elevGoal,
     int? rankIdx,
     List<Attr>? attrs,
+    int? xpTotal,
+    int? recordAltimetriaM,
     List<String>? packOut,
     int? wxPick,
     Map<String, String>? relayVotes,
@@ -198,6 +211,8 @@ class UserProfile {
         elevGoal: elevGoal ?? this.elevGoal,
         rankIdx: rankIdx ?? this.rankIdx,
         attrs: attrs ?? this.attrs,
+        xpTotal: xpTotal ?? this.xpTotal,
+        recordAltimetriaM: recordAltimetriaM ?? this.recordAltimetriaM,
         packOut: packOut ?? this.packOut,
         wxPick: wxPick ?? this.wxPick,
         relayVotes: relayVotes ?? this.relayVotes,
@@ -229,6 +244,8 @@ class UserProfile {
         'elevGoal': elevGoal,
         'rankIdx': rankIdx,
         'attrs': attrs.map((a) => a.toMap()).toList(),
+        'xpTotal': xpTotal,
+        'recordAltimetriaM': recordAltimetriaM,
         'packOut': packOut,
         'wxPick': wxPick,
         'relayVotes': relayVotes,
@@ -269,6 +286,8 @@ class UserProfile {
               Attr('TÉCNICA', 20),
               Attr('ALTITUDE', 20),
             ],
+        xpTotal: ((m['xpTotal'] as num?) ?? 0).toInt(),
+        recordAltimetriaM: ((m['recordAltimetriaM'] as num?) ?? 0).toInt(),
         packOut: (m['packOut'] as List?)?.map((e) => e as String).toList() ?? const [],
         wxPick: ((m['wxPick'] as num?) ?? 0).toInt(),
         relayVotes: (m['relayVotes'] as Map?)?.map((k, v) => MapEntry(k as String, v as String)) ??

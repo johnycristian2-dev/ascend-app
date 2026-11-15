@@ -62,6 +62,17 @@ class ExpeditionState extends ChangeNotifier {
   String prevRank = 'C';
   bool pending = false;
 
+  /// XP acumulado real, pela fórmula de `xpGanho` (ver expedition_calculator.dart)
+  /// — nunca somado diretamente na UI, só por travessias concluídas (`finish`).
+  /// Baseline de demonstração coerente com `rankIdx = 3` (B: 7.000–14.999).
+  int xpTotal = 9400;
+
+  /// Maior altimetria ganha (em metros) numa única travessia concluída —
+  /// é um recorde, não uma soma (ver `attrGains`). Baseline coerente com
+  /// a travessia de demonstração já em andamento (`baseM` em
+  /// expedition_calculator.dart).
+  int recordAltimetriaM = baseM;
+
   String name = 'Jota';
   String baseName = 'São Bento do Sapucaí';
   String units = 'métrico';
@@ -129,7 +140,6 @@ class ExpeditionState extends ChangeNotifier {
     Attr('TÉCNICA', 71),
     Attr('ALTITUDE', 62),
   ];
-  static const deltas = [4, 3, 5, 2];
 
   List<Msg> msgs = List.of(seedMsgs);
 
@@ -271,6 +281,8 @@ class ExpeditionState extends ChangeNotifier {
     elevGoal = p.elevGoal;
     rankIdx = p.rankIdx;
     attrs = p.attrs;
+    xpTotal = p.xpTotal;
+    recordAltimetriaM = p.recordAltimetriaM;
     packOut
       ..clear()
       ..addAll(p.packOut);
@@ -324,6 +336,8 @@ class ExpeditionState extends ChangeNotifier {
       'elevGoal': elevGoal,
       'rankIdx': rankIdx,
       'attrs': attrs.map((a) => a.toMap()).toList(),
+      'xpTotal': xpTotal,
+      'recordAltimetriaM': recordAltimetriaM,
       'packOut': packOut.toList(),
       'wxPick': wxPick,
       'relayVotes': {
@@ -669,26 +683,41 @@ class ExpeditionState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Conclui a travessia: soma o desnível real e abre o resumo.
+  /// Conclui a travessia: XP, desnível e atributos vêm da fórmula real do
+  /// planejamento original, aplicada à rota REAL resultante das decisões
+  /// da cordada (`core.km`/`core.m`) — não mais de um incremento fixo.
+  /// Ver xpGanho/attrGains em expedition_calculator.dart.
   void finish() {
-    elev = (elev + 1640).clamp(0, elevGoal);
-    pending = elev >= elevGoal;
+    final c = core;
+    final dificuldade = dificuldadeDe(trail);
+    xpTotal += xpGanho(km: c.km, m: c.m, dificuldade: dificuldade);
+
+    final gains = attrGains(km: c.km, m: c.m, tecnica: isTecnica(trail));
+    final novoRecorde = c.m > recordAltimetriaM;
     attrs = [
-      for (var i = 0; i < attrs.length; i++) attrs[i].bump(deltas[i])
+      attrs[0].bump(gains.resistencia),
+      attrs[1].bump(gains.forca),
+      attrs[2].bump(gains.tecnica),
+      // Altitude é um recorde, não uma soma: só bate se ESTA travessia
+      // ganhou mais desnível que a melhor já registrada.
+      if (novoRecorde) attrs[3].bump(3) else attrs[3],
     ];
+    if (novoRecorde) recordAltimetriaM = c.m;
+
+    elev = (elev + c.m).clamp(0, elevGoal);
+    pending = elev >= elevGoal;
     _syncProfile();
     go('summary');
   }
 
-  /// Reavaliação física: rank sobe, nível sobe, atributos ganham de novo.
-  /// Compartilhado por fileRecord() (meta batida) e demoRankUp() (manual).
+  /// Reavaliação: o rank passa a vir do XP acumulado real (`rankIdxForXp`),
+  /// não mais de um incremento manual fixo — os atributos já foram
+  /// atualizados em `finish()`, por isso não bate de novo aqui.
+  /// Compartilhada por fileRecord() (meta batida) e demoRankUp() (manual).
   void _advanceRank() {
     prevRank = ranks[rankIdx];
-    rankIdx = (rankIdx + 1).clamp(0, 5);
+    rankIdx = rankIdxForXp(xpTotal);
     level += 1;
-    attrs = [
-      for (var i = 0; i < attrs.length; i++) attrs[i].bump(deltas[i])
-    ];
     _unlock('rank_up');
   }
 
