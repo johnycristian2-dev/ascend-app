@@ -33,17 +33,21 @@ List<GeoPoint> parseGpx(String xml) {
   return out;
 }
 
-/// Distância total do traçado, em km (haversine ponto a ponto).
-double trackLengthKm(List<GeoPoint> pts) {
+/// Distância entre dois pontos, em km (haversine).
+double distanceKmBetween(GeoPoint a, GeoPoint b) {
   const r = 6371.0088;
   double rad(double d) => d * math.pi / 180;
+  final dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+  final h = math.pow(math.sin(dLat / 2), 2) +
+      math.cos(rad(a.lat)) * math.cos(rad(b.lat)) * math.pow(math.sin(dLon / 2), 2);
+  return 2 * r * math.asin(math.sqrt(h));
+}
+
+/// Distância total do traçado, em km.
+double trackLengthKm(List<GeoPoint> pts) {
   var total = 0.0;
   for (var i = 1; i < pts.length; i++) {
-    final a = pts[i - 1], b = pts[i];
-    final dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
-    final h = math.pow(math.sin(dLat / 2), 2) +
-        math.cos(rad(a.lat)) * math.cos(rad(b.lat)) * math.pow(math.sin(dLon / 2), 2);
-    total += 2 * r * math.asin(math.sqrt(h));
+    total += distanceKmBetween(pts[i - 1], pts[i]);
   }
   return total;
 }

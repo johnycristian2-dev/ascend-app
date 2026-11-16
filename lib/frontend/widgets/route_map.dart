@@ -28,6 +28,10 @@ class RouteMap extends StatefulWidget {
   /// inventado.
   final String trackAsset;
 
+  /// Traçado gravado pelo GPS do usuário (verde) e sua posição agora.
+  final List<ll.LatLng> recorded;
+  final ll.LatLng? me;
+
   const RouteMap({
     super.key,
     required this.labelTopLeft,
@@ -35,6 +39,8 @@ class RouteMap extends StatefulWidget {
     required this.labelBottomRightColor,
     this.height = 170,
     this.trackAsset = 'assets/routes/ruy_braga.gpx',
+    this.recorded = const [],
+    this.me,
   });
 
   @override
@@ -44,11 +50,24 @@ class RouteMap extends StatefulWidget {
 class _RouteMapState extends State<RouteMap> {
   List<ll.LatLng> _track = const [];
   double _km = 0;
+  final _ctrl = MapController();
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void didUpdateWidget(RouteMap old) {
+    super.didUpdateWidget(old);
+    final me = widget.me;
+    if (me != null && me != old.me) {
+      // Segue o usuário. Se o mapa ainda não está pronto, ignora.
+      try {
+        _ctrl.move(me, _ctrl.camera.zoom < 15 ? 15 : _ctrl.camera.zoom);
+      } catch (_) {}
+    }
   }
 
   Future<void> _load() async {
@@ -81,6 +100,7 @@ class _RouteMapState extends State<RouteMap> {
           Positioned.fill(
             child: FlutterMap(
               key: ValueKey(_track.length),
+              mapController: _ctrl,
               options: MapOptions(
                 initialCenter: picoParanaCenter,
                 initialZoom: 12.5,
@@ -114,8 +134,25 @@ class _RouteMapState extends State<RouteMap> {
                   PolylineLayer(polylines: [
                     Polyline(points: _track, strokeWidth: 3.5, color: AppColors.amber),
                   ]),
+                if (w.recorded.length >= 2)
+                  PolylineLayer(polylines: [
+                    Polyline(points: w.recorded, strokeWidth: 4, color: AppColors.green),
+                  ]),
                 MarkerLayer(
                   markers: [
+                    if (w.me != null)
+                      Marker(
+                        point: w.me!,
+                        width: 22,
+                        height: 22,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.blue,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                          ),
+                        ),
+                      ),
                     if (hasTrack)
                       Marker(
                         point: _track.first,

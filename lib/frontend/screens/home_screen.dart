@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart' as ll;
 import '../app.dart';
 import '../../backend/state/expedition_calculator.dart';
 import '../theme/app_colors.dart';
@@ -83,6 +84,32 @@ class HomeScreen extends StatelessWidget {
           labelTopLeft: 'MAPA · PICO PARANÁ',
           labelBottomRight: cond.label,
           labelBottomRightColor: AppColors.tagInks[0],
+          recorded: [for (final p in s.shownTrack) ll.LatLng(p.lat, p.lon)],
+          me: s.myPos == null ? null : ll.LatLng(s.myPos!.lat, s.myPos!.lon),
+        ),
+        const SizedBox(height: 8),
+        // GPS em tempo real: acompanha a posição e grava o traçado da subida.
+        Row(
+          children: [
+            Expanded(
+              child: AppButton(s.tracking ? 'PARAR GPS' : 'INICIAR GPS',
+                  onTap: s.tracking ? s.stopTracking : s.startTracking),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                s.locationError ??
+                    (s.tracking
+                        ? 'GPS ligado · ${fmtDec(s.shownTrackKm, 2)} km gravados'
+                        : s.shownTrack.length >= 2
+                            ? 'Último traçado: ${fmtDec(s.shownTrackKm, 2)} km'
+                            : 'GPS desligado'),
+                style: AppTypography.body(
+                    size: 10,
+                    color: s.locationError != null ? AppColors.amber : AppColors.text2),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
 

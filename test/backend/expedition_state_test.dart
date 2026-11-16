@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ascend/backend/services/auth_service.dart';
 import 'package:ascend/backend/services/profile_repository.dart';
 import 'package:ascend/backend/data/trail_catalog.dart';
 import 'package:ascend/backend/models/catalog_trail_model.dart';
+import 'package:ascend/backend/geo/gpx_parser.dart';
+import 'package:ascend/backend/services/location_service.dart';
 import 'package:ascend/backend/services/radio_service.dart';
 import 'package:ascend/backend/services/trail_repository.dart';
 import 'package:ascend/backend/state/expedition_calculator.dart';
@@ -45,7 +48,17 @@ class _FakeTrails implements TrailRepository {
   }
 }
 
-ExpeditionState _novoEstado([_FakeTrails? trails]) => ExpeditionState(
+class _FakeLocation implements LocationService {
+  String? problema;
+  final ctrl = StreamController<LocationFix>();
+  @override
+  Future<String?> ensurePermission() async => problema;
+  @override
+  Stream<LocationFix> fixes() => ctrl.stream;
+}
+
+ExpeditionState _novoEstado([_FakeTrails? trails, _FakeLocation? loc]) => ExpeditionState(
+    location: loc ?? _FakeLocation(),
     auth: _FakeAuth(),
     profiles: _FakeProfiles(),
     radioService: _FakeRadio(),
@@ -164,6 +177,37 @@ void main() {
       final r = CatalogTrail.fromMap('a', t.toMap());
       expect((r.nome, r.km, r.ganhoM), ('N', 3.2, 100));
       expect(r.rankIdx, 5); // clamp: rank inválido não vaza
+    });
+  });
+
+  group('GPS em tempo real', () {
+    GeoPoint p(double m) => GeoPoint(-25.0 + m / 111320, -48.0);
+
+    test('grava o traçado enquanto liga e guarda ao parar', () async {
+      final loc = _FakeLocation();
+      final s = _novoEstado(null, loc);
+      await s.startTracking();
+      expect(s.tracking, isTrue);
+      loc.ctrl.add(LocationFix(p(0), 5));
+      loc.ctrl.add(LocationFix(p(100), 5));
+      loc.ctrl.add(LocationFix(p(200), 5));
+      await Future<void>.delayed(Duration.zero);
+      expect(s.myPos, p(200));
+      expect(s.recorder.points.length, 3);
+      await s.stopTracking();
+      expect(s.tracking, isFalse);
+      expect(s.savedTrack.length, 3);
+      expect(s.savedTrackKm, closeTo(0.2, 0.005));
+      s.dispose();
+    });
+
+    test('permissão negada não liga o GPS e mostra o motivo', () async {
+      final loc = _FakeLocation()..problema = 'Permissão de localização negada.';
+      final s = _novoEstado(null, loc);
+      await s.startTracking();
+      expect(s.tracking, isFalse);
+      expect(s.locationError, 'Permissão de localização negada.');
+      s.dispose();
     });
   });
 }

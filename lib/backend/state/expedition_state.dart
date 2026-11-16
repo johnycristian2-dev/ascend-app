@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import '../data/gear_catalog.dart';
+import '../geo/gpx_parser.dart';
+import '../geo/track_recorder.dart';
 import '../data/relay_notes.dart';
 import '../data/weather_forecast.dart';
 import '../data/trail_catalog.dart';
@@ -14,6 +16,7 @@ import '../models/radio_message_model.dart';
 import '../models/user_profile_model.dart';
 import '../services/auth_service.dart';
 import '../services/profile_repository.dart';
+import '../services/location_service.dart';
 import '../services/radio_service.dart';
 import '../services/trail_repository.dart';
 import 'expedition_calculator.dart';
@@ -32,11 +35,13 @@ class ExpeditionState extends ChangeNotifier {
       {AuthService? auth,
       ProfileRepository? profiles,
       RadioService? radioService,
-      TrailRepository? trails})
+      TrailRepository? trails,
+      LocationService? location})
       : auth = auth ?? AuthService(),
         profiles = profiles ?? ProfileRepository(),
         radioService = radioService ?? RadioService(),
-        trails = trails ?? TrailRepository();
+        trails = trails ?? TrailRepository(),
+        location = location ?? LocationService();
 
   /// Serviços de backend — a UI só fala com eles através dos métodos
   /// abaixo (signIn/signUp/signOut/completeOnboarding), nunca direto.
@@ -44,10 +49,12 @@ class ExpeditionState extends ChangeNotifier {
   final ProfileRepository profiles;
   final RadioService radioService;
   final TrailRepository trails;
+  final LocationService location;
   final AudioPlayer _player = AudioPlayer();
 
   @override
   void dispose() {
+    _fixSub?.cancel();
     _radioTimer?.cancel();
     _player.dispose();
     radioService.dispose();
@@ -335,6 +342,10 @@ class ExpeditionState extends ChangeNotifier {
     practicingSince = p.practicingSince;
     dreamTrail = p.dreamTrail;
     favoriteGear = p.favoriteGear;
+    savedTrack = [
+      for (var i = 0; i + 1 < p.lastTrack.length; i += 2) GeoPoint(p.lastTrack[i], p.lastTrack[i + 1]),
+    ];
+    savedTrackKm = p.lastTrackKm;
   }
 
   /// Grava o essencial do caderno no Firestore. Silencioso de propósito —
@@ -377,6 +388,8 @@ class ExpeditionState extends ChangeNotifier {
       'practicingSince': practicingSince,
       'dreamTrail': dreamTrail,
       'favoriteGear': favoriteGear,
+      'lastTrack': [for (final g in savedTrack) ...[g.lat, g.lon]],
+      'lastTrackKm': savedTrackKm,
     }).catchError((_) {});
   }
 
@@ -539,6 +552,58 @@ class ExpeditionState extends ChangeNotifier {
     _syncProfile();
     notifyListeners();
   }
+  // ----------------------------------------------------- GPS em tempo real
+
+  /// GPS ligado: acompanha sua posição e grava o traçado da subida.
+  bool tracking = false;
+  GeoPoint? myPos;
+  String? locationError;
+  final TrackRecorder recorder = TrackRecorder();
+  StreamSubscription<LocationFix>? _fixSub;
+
+  /// Último traçado salvo no caderno (para mostrar depois de parar o GPS).
+  List<GeoPoint> savedTrack = const [];
+  double savedTrackKm = 0;
+
+  /// Traçado a desenhar: o que está sendo gravado, ou o último salvo.
+  List<GeoPoint> get shownTrack => tracking || recorder.points.isNotEmpty ? recorder.points : savedTrack;
+  double get shownTrackKm => tracking || recorder.points.isNotEmpty ? recorder.km : savedTrackKm;
+
+  Future<void> startTracking() async {
+    if (tracking) return;
+    locationError = null;
+    final problem = await location.ensurePermission();
+    if (problem != null) {
+      locationError = problem;
+      notifyListeners();
+      return;
+    }
+    recorder.clear();
+    tracking = true;
+    _fixSub = location.fixes().listen((fix) {
+      myPos = fix.point;
+      recorder.add(fix.point, accuracyM: fix.accuracyM);
+      notifyListeners();
+    }, onError: (_) {
+      locationError = 'Perdi o sinal de GPS.';
+      notifyListeners();
+    });
+    notifyListeners();
+  }
+
+  /// Para o GPS e salva o traçado gravado no caderno.
+  Future<void> stopTracking() async {
+    await _fixSub?.cancel();
+    _fixSub = null;
+    tracking = false;
+    if (recorder.points.length >= 2) {
+      savedTrack = recorder.downsampled(600);
+      savedTrackKm = recorder.km;
+      _syncProfile();
+    }
+    notifyListeners();
+  }
+
   // ------------------------------------------------------------- catálogo
 
   /// Curadoria embutida + trilhas da comunidade (mais novas primeiro).

@@ -335,3 +335,14 @@ omissão. Conferido direto no HTML e nas conversas de design
   funcionarem, **publique as regras**: `firestore.rules` →
   `firebase deploy --only firestore:rules` (ou cole no console). Sem isso o
   catálogo cai, com aviso, só na curadoria.
+
+### GPS em tempo real
+
+Na tela inicial, **INICIAR GPS** acompanha sua posição (ponto azul, o mapa
+segue você) e grava o traçado da subida (linha verde). **PARAR GPS** salva o
+último traçado no seu caderno (Firestore, até 600 pontos) e ele reaparece da
+próxima vez. Leituras com precisão pior que 50 m e pontos parados (< 8 m) são
+descartados. É a posição **só do próprio usuário**: o compartilhamento com a
+cordada em tempo real ainda não existe. Na web a localização exige https (ou
+localhost) e a permissão do navegador; o projeto ainda não tem as pastas
+`android/` e `ios/` — ao gerá-las, acrescente as permissões de localização.
