@@ -7,5 +7,18 @@ service cloud.firestore {
     match /users/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
+
+    // Catálogo da comunidade: qualquer usuário logado lê; só publica em
+    // seu próprio nome; ninguém edita nem apaga trilha dos outros.
+    match /trails/{id} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.autorUid == request.auth.uid
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() > 0
+        && request.resource.data.nome.size() <= 80
+        && request.resource.data.fonte == 'comunidade';
+      allow update, delete: if request.auth != null && resource.data.autorUid == request.auth.uid;
+    }
   }
 }

@@ -2,7 +2,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ascend/backend/services/auth_service.dart';
 import 'package:ascend/backend/services/profile_repository.dart';
+import 'package:ascend/backend/data/trail_catalog.dart';
+import 'package:ascend/backend/models/catalog_trail_model.dart';
 import 'package:ascend/backend/services/radio_service.dart';
+import 'package:ascend/backend/services/trail_repository.dart';
 import 'package:ascend/backend/state/expedition_calculator.dart';
 import 'package:ascend/backend/state/expedition_state.dart';
 
@@ -26,8 +29,27 @@ class _FakeRadio implements RadioService {
   dynamic noSuchMethod(Invocation i) => super.noSuchMethod(i);
 }
 
-ExpeditionState _novoEstado() =>
-    ExpeditionState(auth: _FakeAuth(), profiles: _FakeProfiles(), radioService: _FakeRadio());
+class _FakeTrails implements TrailRepository {
+  final List<CatalogTrail> store = [];
+  bool falha = false;
+  @override
+  Future<List<CatalogTrail>> fetchAll() async {
+    if (falha) throw Exception('sem rede');
+    return List.of(store);
+  }
+
+  @override
+  Future<void> publish(CatalogTrail t) async {
+    if (falha) throw Exception('sem rede');
+    store.insert(0, t);
+  }
+}
+
+ExpeditionState _novoEstado([_FakeTrails? trails]) => ExpeditionState(
+    auth: _FakeAuth(),
+    profiles: _FakeProfiles(),
+    radioService: _FakeRadio(),
+    trails: trails ?? _FakeTrails());
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -91,6 +113,57 @@ void main() {
       expect(s.rankIdx, rankIdxForXp(s.xpTotal));
       expect(s.rankIdx, greaterThanOrEqualTo(3));
       s.dispose();
+    });
+  });
+
+  group('catálogo da comunidade', () {
+    test('sem publicações, mostra a curadoria; com publicações, comunidade vem antes', () async {
+      final repo = _FakeTrails();
+      final s = _novoEstado(repo);
+      await s.loadCatalog();
+      expect(s.catalog.length, trailCatalogSeed.length);
+      expect(s.catalogOffline, isFalse);
+
+      s.uid = 'u1';
+      final ok = await s.publishTrail(
+          nome: ' trilha teste ', rankIdx: 2, km: 5.5, ganhoM: 300,
+          duracao: '1 dia', regiao: 'PR', nota: 'n');
+      expect(ok, isTrue);
+      expect(s.catalog.first.daComunidade, isTrue);
+      expect(s.catalog.first.nome, 'TRILHA TESTE');
+      expect(s.catalog.first.autorUid, 'u1');
+      expect(s.catalog.length, trailCatalogSeed.length + 1);
+      s.dispose();
+    });
+
+    test('falha de leitura cai na curadoria e avisa que está offline', () async {
+      final repo = _FakeTrails()..falha = true;
+      final s = _novoEstado(repo);
+      await s.loadCatalog();
+      expect(s.catalogOffline, isTrue);
+      expect(s.catalog.length, trailCatalogSeed.length);
+      s.dispose();
+    });
+
+    test('validação: exige login, nome e distância; falha de rede não publica', () async {
+      final repo = _FakeTrails();
+      final s = _novoEstado(repo);
+      expect(await s.publishTrail(nome: 'x', rankIdx: 0, km: 1, ganhoM: 0, duracao: '', regiao: '', nota: ''), isFalse);
+      s.uid = 'u1';
+      expect(await s.publishTrail(nome: '  ', rankIdx: 0, km: 1, ganhoM: 0, duracao: '', regiao: '', nota: ''), isFalse);
+      expect(await s.publishTrail(nome: 'x', rankIdx: 0, km: 0, ganhoM: 0, duracao: '', regiao: '', nota: ''), isFalse);
+      repo.falha = true;
+      expect(await s.publishTrail(nome: 'x', rankIdx: 0, km: 1, ganhoM: 0, duracao: '', regiao: '', nota: ''), isFalse);
+      expect(s.publishError, isNotNull);
+      expect(repo.store, isEmpty);
+      s.dispose();
+    });
+
+    test('CatalogTrail faz ida e volta pelo mapa do Firestore', () {
+      const t = CatalogTrail(id: 'a', nome: 'N', rankIdx: 9, km: 3.2, ganhoM: 100, duracao: '1 dia');
+      final r = CatalogTrail.fromMap('a', t.toMap());
+      expect((r.nome, r.km, r.ganhoM), ('N', 3.2, 100));
+      expect(r.rankIdx, 5); // clamp: rank inválido não vaza
     });
   });
 }

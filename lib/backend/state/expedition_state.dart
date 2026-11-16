@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import '../data/gear_catalog.dart';
 import '../data/relay_notes.dart';
 import '../data/weather_forecast.dart';
+import '../data/trail_catalog.dart';
 import '../models/attr_model.dart';
+import '../models/catalog_trail_model.dart';
 import '../models/chat_message_model.dart';
 import '../models/gear_usage_model.dart';
 import '../models/log_entry_model.dart';
@@ -13,6 +15,7 @@ import '../models/user_profile_model.dart';
 import '../services/auth_service.dart';
 import '../services/profile_repository.dart';
 import '../services/radio_service.dart';
+import '../services/trail_repository.dart';
 import 'expedition_calculator.dart';
 
 export '../models/attr_model.dart' show Attr;
@@ -25,16 +28,22 @@ const ranks = ['E', 'D', 'C', 'B', 'A', 'S'];
 
 /// Estado global. As telas de decisão escrevem aqui; todo o resto é derivado.
 class ExpeditionState extends ChangeNotifier {
-  ExpeditionState({AuthService? auth, ProfileRepository? profiles, RadioService? radioService})
+  ExpeditionState(
+      {AuthService? auth,
+      ProfileRepository? profiles,
+      RadioService? radioService,
+      TrailRepository? trails})
       : auth = auth ?? AuthService(),
         profiles = profiles ?? ProfileRepository(),
-        radioService = radioService ?? RadioService();
+        radioService = radioService ?? RadioService(),
+        trails = trails ?? TrailRepository();
 
   /// Serviços de backend — a UI só fala com eles através dos métodos
   /// abaixo (signIn/signUp/signOut/completeOnboarding), nunca direto.
   final AuthService auth;
   final ProfileRepository profiles;
   final RadioService radioService;
+  final TrailRepository trails;
   final AudioPlayer _player = AudioPlayer();
 
   @override
@@ -217,14 +226,14 @@ class ExpeditionState extends ChangeNotifier {
   static const depth = {
     'splash': 0, 'auth': 0, 'onboard': 1, 'home': 1, 'chat': 1, 'profile': 1, 'inv': 1,
     'ach': 2, 'history': 2, 'settings': 2, 'discover': 2, 'route': 2,
-    'plan': 2, 'watch': 2, 'relay': 2, 'party': 3, 'summary': 3, 'window': 3,
+    'plan': 2, 'watch': 2, 'relay': 2, 'publish': 3, 'party': 3, 'summary': 3, 'window': 3,
     'rankup': 4, 'pack': 4,
   };
 
   /// Aba raiz destacada para telas mais profundas. `inv` virou aba própria
   /// na barra inferior — deixou de ser filha de `profile` (ver BottomNav).
   String get activeTab {
-    const toHome = ['route', 'discover', 'party', 'plan', 'watch', 'window', 'pack', 'relay'];
+    const toHome = ['route', 'discover', 'publish', 'party', 'plan', 'watch', 'window', 'pack', 'relay'];
     const toProfile = ['rankup', 'summary', 'settings', 'history', 'ach'];
     if (toHome.contains(screen)) return 'home';
     if (toProfile.contains(screen)) return 'profile';
@@ -530,6 +539,80 @@ class ExpeditionState extends ChangeNotifier {
     _syncProfile();
     notifyListeners();
   }
+  // ------------------------------------------------------------- catálogo
+
+  /// Curadoria embutida + trilhas da comunidade (mais novas primeiro).
+  List<CatalogTrail> catalog = List.of(trailCatalogSeed);
+  bool catalogLoading = false;
+
+  /// true quando a coleção da comunidade não pôde ser lida (sem rede ou
+  /// regras do Firestore ainda não publicadas) — a lista mostra só a curadoria.
+  bool catalogOffline = false;
+  String? publishError;
+
+  Future<void> loadCatalog() async {
+    catalogLoading = true;
+    notifyListeners();
+    try {
+      final community = await trails.fetchAll();
+      catalog = [...community, ...trailCatalogSeed];
+      catalogOffline = false;
+    } catch (_) {
+      catalog = List.of(trailCatalogSeed);
+      catalogOffline = true;
+    }
+    catalogLoading = false;
+    notifyListeners();
+  }
+
+  /// Publica uma trilha no catálogo, em nome do usuário logado. Devolve
+  /// true se a coleção aceitou (e já recarrega a lista).
+  Future<bool> publishTrail({
+    required String nome,
+    required int rankIdx,
+    required double km,
+    required int ganhoM,
+    required String duracao,
+    required String regiao,
+    required String nota,
+  }) async {
+    publishError = null;
+    final id = uid;
+    if (id == null) {
+      publishError = 'Entre na sua conta para publicar.';
+    } else if (nome.trim().isEmpty || nome.trim().length > 80) {
+      publishError = 'Dê um nome à trilha (até 80 caracteres).';
+    } else if (km <= 0) {
+      publishError = 'Informe a distância em km.';
+    }
+    if (publishError != null) {
+      notifyListeners();
+      return false;
+    }
+    try {
+      await trails.publish(CatalogTrail(
+        id: '',
+        nome: nome.trim().toUpperCase(),
+        rankIdx: rankIdx.clamp(0, 5),
+        km: km,
+        ganhoM: ganhoM < 0 ? 0 : ganhoM,
+        duracao: duracao.trim(),
+        regiao: regiao.trim(),
+        nota: nota.trim(),
+        autorNome: name,
+        autorUid: id!,
+        fonte: 'comunidade',
+        criadoEmMs: DateTime.now().millisecondsSinceEpoch,
+      ));
+    } catch (_) {
+      publishError = 'Não foi possível publicar agora. Confira a conexão e tente de novo.';
+      notifyListeners();
+      return false;
+    }
+    await loadCatalog();
+    return true;
+  }
+
   void setPlanTrail(int i) {
     planTrail = i;
     _syncProfile();

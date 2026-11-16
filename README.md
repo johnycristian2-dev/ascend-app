@@ -321,3 +321,17 @@ omissão. Conferido direto no HTML e nas conversas de design
   contínua a partir de `diasDesdeConfirmacao` (não da data de postagem — um
   recado de 1 ano confirmado há 6 dias continua vivo), com piso em .35 aos
   182 dias. Nunca um aviso de texto, só o traço ficando mais claro.
+
+## Traçado GPS da rota e catálogo da comunidade
+
+- **Traçado:** o mapa da tela inicial desenha, como linha, o GPX que estiver em
+  `assets/routes/ruy_braga.gpx` (ajuste o nome em `RouteMap.trackAsset`) e
+  enquadra a câmera nele. Sem o arquivo, mostra só o marcador do cume — o app
+  nunca desenha um traçado que não veio de um GPX real. Para exportar um:
+  Wikiloc / AllTrails / Strava → "Baixar GPX" (respeite a licença do autor e
+  cite a fonte), ou grave a própria trilha em campo.
+- **Catálogo:** `trailCatalogSeed` (curadoria do app, números do protótipo) +
+  coleção `trails` do Firestore (publicada pelos usuários). Para as publicações
+  funcionarem, **publique as regras**: `firestore.rules` →
+  `firebase deploy --only firestore:rules` (ou cole no console). Sem isso o
+  catálogo cai, com aviso, só na curadoria.
