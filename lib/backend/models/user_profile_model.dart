@@ -106,6 +106,11 @@ class UserProfile {
   final String dreamTrail;
   final String favoriteGear;
 
+  /// Último traçado GPS gravado em campo: pares lat, lon achatados
+  /// (o Firestore não aceita lista dentro de lista) e a distância em km.
+  final List<double> lastTrack;
+  final double lastTrackKm;
+
   const UserProfile({
     required this.uid,
     required this.name,
@@ -138,6 +143,8 @@ class UserProfile {
     this.practicingSince = '',
     this.dreamTrail = '',
     this.favoriteGear = '',
+    this.lastTrack = const [],
+    this.lastTrackKm = 0,
   });
 
   /// Perfil inicial de quem acabou de se cadastrar — nível 1, desnível
@@ -200,6 +207,8 @@ class UserProfile {
     String? practicingSince,
     String? dreamTrail,
     String? favoriteGear,
+    List<double>? lastTrack,
+    double? lastTrackKm,
   }) =>
       UserProfile(
         uid: uid,
@@ -233,6 +242,8 @@ class UserProfile {
         practicingSince: practicingSince ?? this.practicingSince,
         dreamTrail: dreamTrail ?? this.dreamTrail,
         favoriteGear: favoriteGear ?? this.favoriteGear,
+        lastTrack: lastTrack ?? this.lastTrack,
+        lastTrackKm: lastTrackKm ?? this.lastTrackKm,
       );
 
   Map<String, dynamic> toMap() => {
@@ -266,6 +277,8 @@ class UserProfile {
         'practicingSince': practicingSince,
         'dreamTrail': dreamTrail,
         'favoriteGear': favoriteGear,
+        'lastTrack': lastTrack,
+        'lastTrackKm': lastTrackKm,
       };
 
   factory UserProfile.fromMap(String uid, Map<String, dynamic> m) => UserProfile(
@@ -323,5 +336,7 @@ class UserProfile {
         practicingSince: (m['practicingSince'] as String?) ?? '',
         dreamTrail: (m['dreamTrail'] as String?) ?? '',
         favoriteGear: (m['favoriteGear'] as String?) ?? '',
+        lastTrack: (m['lastTrack'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? const [],
+        lastTrackKm: ((m['lastTrackKm'] as num?) ?? 0).toDouble(),
       );
 }

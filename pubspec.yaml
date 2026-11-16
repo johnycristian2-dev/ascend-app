@@ -19,6 +19,7 @@ dependencies:
   http: ^1.6.0
   flutter_map: ^8.3.2
   latlong2: ^0.10.1
+  geolocator: ^14.1.2
 
 dev_dependencies:
   flutter_test:
@@ -30,3 +31,4 @@ flutter:
   assets:
     - assets/art/keyart-limpa.png
     - assets/art/emblema-alpha.png
+    - assets/routes/

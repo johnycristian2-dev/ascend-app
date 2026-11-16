@@ -14,6 +14,7 @@ import 'screens/window_screen.dart';
 import 'screens/pack_screen.dart';
 import 'screens/relay_screen.dart';
 import 'screens/discover_screen.dart';
+import 'screens/publish_trail_screen.dart';
 import 'screens/plan_screen.dart';
 import 'screens/party_screen.dart';
 import 'screens/watch_screen.dart';
@@ -142,6 +143,7 @@ class Shell extends StatelessWidget {
         'pack' => const PackScreen(),
         'relay' => const RelayScreen(),
         'discover' => const DiscoverScreen(),
+        'publish' => const PublishTrailScreen(),
         'plan' => const PlanScreen(),
         'party' => const PartyScreen(),
         'watch' => const WatchScreen(),

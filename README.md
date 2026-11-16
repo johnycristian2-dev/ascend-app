@@ -321,3 +321,28 @@ omissão. Conferido direto no HTML e nas conversas de design
   contínua a partir de `diasDesdeConfirmacao` (não da data de postagem — um
   recado de 1 ano confirmado há 6 dias continua vivo), com piso em .35 aos
   182 dias. Nunca um aviso de texto, só o traço ficando mais claro.
+
+## Traçado GPS da rota e catálogo da comunidade
+
+- **Traçado:** o mapa da tela inicial desenha, como linha, o GPX que estiver em
+  `assets/routes/ruy_braga.gpx` (ajuste o nome em `RouteMap.trackAsset`) e
+  enquadra a câmera nele. Sem o arquivo, mostra só o marcador do cume — o app
+  nunca desenha um traçado que não veio de um GPX real. Para exportar um:
+  Wikiloc / AllTrails / Strava → "Baixar GPX" (respeite a licença do autor e
+  cite a fonte), ou grave a própria trilha em campo.
+- **Catálogo:** `trailCatalogSeed` (curadoria do app, números do protótipo) +
+  coleção `trails` do Firestore (publicada pelos usuários). Para as publicações
+  funcionarem, **publique as regras**: `firestore.rules` →
+  `firebase deploy --only firestore:rules` (ou cole no console). Sem isso o
+  catálogo cai, com aviso, só na curadoria.
+
+### GPS em tempo real
+
+Na tela inicial, **INICIAR GPS** acompanha sua posição (ponto azul, o mapa
+segue você) e grava o traçado da subida (linha verde). **PARAR GPS** salva o
+último traçado no seu caderno (Firestore, até 600 pontos) e ele reaparece da
+próxima vez. Leituras com precisão pior que 50 m e pontos parados (< 8 m) são
+descartados. É a posição **só do próprio usuário**: o compartilhamento com a
+cordada em tempo real ainda não existe. Na web a localização exige https (ou
+localhost) e a permissão do navegador; o projeto ainda não tem as pastas
+`android/` e `ios/` — ao gerá-las, acrescente as permissões de localização.
