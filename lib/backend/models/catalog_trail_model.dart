@@ -15,6 +15,11 @@ class CatalogTrail {
   final String fonte;
   final int criadoEmMs;
 
+  /// Localização (cume ou início) — opcional: sem ela o mapa avisa em vez
+  /// de chutar um lugar.
+  final double? lat;
+  final double? lon;
+
   const CatalogTrail({
     required this.id,
     required this.nome,
@@ -28,7 +33,11 @@ class CatalogTrail {
     this.autorUid = '',
     this.fonte = 'comunidade',
     this.criadoEmMs = 0,
+    this.lat,
+    this.lon,
   });
+
+  bool get temLocal => lat != null && lon != null;
 
   bool get daComunidade => fonte == 'comunidade';
 
@@ -44,6 +53,8 @@ class CatalogTrail {
         'autorUid': autorUid,
         'fonte': fonte,
         'criadoEmMs': criadoEmMs,
+        if (lat != null) 'lat': lat,
+        if (lon != null) 'lon': lon,
       };
 
   factory CatalogTrail.fromMap(String id, Map<String, dynamic> m) => CatalogTrail(
@@ -59,5 +70,7 @@ class CatalogTrail {
         autorUid: (m['autorUid'] as String?) ?? '',
         fonte: (m['fonte'] as String?) ?? 'comunidade',
         criadoEmMs: ((m['criadoEmMs'] as num?) ?? 0).toInt(),
+        lat: (m['lat'] as num?)?.toDouble(),
+        lon: (m['lon'] as num?)?.toDouble(),
       );
 }

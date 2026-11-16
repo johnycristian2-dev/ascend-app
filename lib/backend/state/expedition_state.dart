@@ -346,6 +346,9 @@ class ExpeditionState extends ChangeNotifier {
       for (var i = 0; i + 1 < p.lastTrack.length; i += 2) GeoPoint(p.lastTrack[i], p.lastTrack[i + 1]),
     ];
     savedTrackKm = p.lastTrackKm;
+    activeTrail = p.activeTrail.isEmpty
+        ? trailCatalogSeed.first
+        : CatalogTrail.fromMap((p.activeTrail['id'] as String?) ?? 'active', p.activeTrail);
   }
 
   /// Grava o essencial do caderno no Firestore. Silencioso de propósito —
@@ -390,6 +393,7 @@ class ExpeditionState extends ChangeNotifier {
       'favoriteGear': favoriteGear,
       'lastTrack': [for (final g in savedTrack) ...[g.lat, g.lon]],
       'lastTrackKm': savedTrackKm,
+      'activeTrail': {'id': activeTrail.id, ...activeTrail.toMap()},
     }).catchError((_) {});
   }
 
@@ -606,6 +610,40 @@ class ExpeditionState extends ChangeNotifier {
 
   // ------------------------------------------------------------- catálogo
 
+  /// A trilha em curso — a que a tela inicial, o mapa, o plano e o XP usam.
+  CatalogTrail activeTrail = trailCatalogSeed.first;
+
+  /// Distância e desnível da expedição: os da trilha escolhida + o efeito
+  /// das decisões de mochila (variantes de rota) sobre a rota-base.
+  double get activeKm => activeTrail.km + (core.km - baseKm);
+  int get activeM => activeTrail.ganhoM + (core.m - baseM);
+
+  /// Escolhe uma trilha do catálogo como a expedição em curso e segue
+  /// para o planejamento (data e cordada).
+  void selectTrail(CatalogTrail t) {
+    activeTrail = t;
+    _syncProfile();
+    go('plan');
+  }
+
+  /// Uma leitura única de GPS, para marcar o local de uma trilha a publicar.
+  Future<GeoPoint?> currentLocation() async {
+    final problem = await location.ensurePermission();
+    if (problem != null) {
+      locationError = problem;
+      notifyListeners();
+      return null;
+    }
+    try {
+      final fix = await location.fixes().first.timeout(const Duration(seconds: 20));
+      return fix.point;
+    } catch (_) {
+      locationError = 'Não consegui ler sua posição agora.';
+      notifyListeners();
+      return null;
+    }
+  }
+
   /// Curadoria embutida + trilhas da comunidade (mais novas primeiro).
   List<CatalogTrail> catalog = List.of(trailCatalogSeed);
   bool catalogLoading = false;
@@ -640,6 +678,8 @@ class ExpeditionState extends ChangeNotifier {
     required String duracao,
     required String regiao,
     required String nota,
+    double? lat,
+    double? lon,
   }) async {
     publishError = null;
     final id = uid;
@@ -668,6 +708,8 @@ class ExpeditionState extends ChangeNotifier {
         autorUid: id!,
         fonte: 'comunidade',
         criadoEmMs: DateTime.now().millisecondsSinceEpoch,
+        lat: lat,
+        lon: lon,
       ));
     } catch (_) {
       publishError = 'Não foi possível publicar agora. Confira a conexão e tente de novo.';
@@ -843,13 +885,14 @@ class ExpeditionState extends ChangeNotifier {
   /// da cordada (`core.km`/`core.m`) — não mais de um incremento fixo.
   /// Ver xpGanho/attrGains em expedition_calculator.dart.
   void finish() {
-    final c = core;
+    final km = activeKm;
+    final m = activeM;
     final dificuldade = dificuldadeDe(trail);
-    final xpGain = xpGanho(km: c.km, m: c.m, dificuldade: dificuldade);
+    final xpGain = xpGanho(km: km, m: m, dificuldade: dificuldade);
     xpTotal += xpGain;
 
-    final gains = attrGains(km: c.km, m: c.m, tecnica: isTecnica(trail));
-    final novoRecorde = c.m > recordAltimetriaM;
+    final gains = attrGains(km: km, m: m, tecnica: isTecnica(trail));
+    final novoRecorde = m > recordAltimetriaM;
     attrs = [
       attrs[0].bump(gains.resistencia),
       attrs[1].bump(gains.forca),
@@ -858,16 +901,16 @@ class ExpeditionState extends ChangeNotifier {
       // ganhou mais desnível que a melhor já registrada.
       if (novoRecorde) attrs[3].bump(3) else attrs[3],
     ];
-    if (novoRecorde) recordAltimetriaM = c.m;
+    if (novoRecorde) recordAltimetriaM = m;
 
     // Guardado só para a tela de resumo mostrar o ganho de verdade desta
     // travessia, já que attrs/xpTotal acima já viraram o total acumulado.
     lastXpGain = xpGain;
-    lastElevGain = c.m;
+    lastElevGain = m;
     lastAttrGains = gains;
     lastAltitudeRecord = novoRecorde;
 
-    elev = (elev + c.m).clamp(0, elevGoal);
+    elev = (elev + m).clamp(0, elevGoal);
     pending = elev >= elevGoal;
     _syncProfile();
     go('summary');

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import '../app.dart';
+import '../../backend/state/expedition_calculator.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/widgets.dart';
-
-const _planTrails = ['PEDRA DO BAÚ', 'TRAVESSIA RUY BRAGA', 'PRATELEIRAS'];
 
 /// Nova expedição: trilha, data e o que a cordada leva.
 class PlanScreen extends StatelessWidget {
@@ -23,26 +22,23 @@ class PlanScreen extends StatelessWidget {
             children: [
               const AppLabel('TRILHA', size: 9, tracking: 0.26),
               const SizedBox(height: 8),
-              ...List.generate(_planTrails.length, (i) {
-                final on = s.planTrail == i;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: AppPanel(
-                    onTap: () => s.setPlanTrail(i),
-                    bg: on ? AppColors.raised : AppColors.surface,
-                    borderColor: on ? AppColors.borderRaised : AppColors.border,
-                    child: Row(
-                      children: [
-                        Icon(on ? Icons.radio_button_checked : Icons.radio_button_off,
-                            size: 14, color: on ? AppColors.amber : AppColors.dim),
-                        const SizedBox(width: 10),
-                        AppLabel(_planTrails[i],
-                            color: on ? AppColors.text : AppColors.text2, size: 11),
-                      ],
-                    ),
-                  ),
-                );
-              }),
+              AppPanel(
+                bg: AppColors.raised,
+                borderColor: AppColors.borderRaised,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppLabel(s.activeTrail.nome, color: AppColors.text, size: 12),
+                    const SizedBox(height: 6),
+                    Text(
+                        '${fmtDec(s.activeTrail.km)} km · +${s.activeTrail.ganhoM} m'
+                        '${s.activeTrail.duracao.isEmpty ? '' : ' · ${s.activeTrail.duracao}'}',
+                        style: AppTypography.body(size: 10, color: AppColors.text2)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              AppButton('TROCAR TRILHA', onTap: () => s.go('discover')),
               const SizedBox(height: 14),
               const AppLabel('DATA DE PARTIDA', size: 9, tracking: 0.26),
               const SizedBox(height: 8),

@@ -36,7 +36,7 @@ class PartyScreen extends StatelessWidget {
     return Column(
       children: [
         ScreenBar('CONVOCAR CORDADA',
-            sub: 'Travessia Ruy Braga · partida 12 JUL, 06:00',
+            sub: '${s.activeTrail.nome} · partida ${s.planDate} JUL, 06:00',
             onBack: () => s.go('plan')),
         Expanded(
           child: ListView(

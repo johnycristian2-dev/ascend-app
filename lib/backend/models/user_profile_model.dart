@@ -111,6 +111,9 @@ class UserProfile {
   final List<double> lastTrack;
   final double lastTrackKm;
 
+  /// Trilha em curso (cópia de `CatalogTrail.toMap()` + 'id'); vazio = a padrão.
+  final Map<String, dynamic> activeTrail;
+
   const UserProfile({
     required this.uid,
     required this.name,
@@ -145,6 +148,7 @@ class UserProfile {
     this.favoriteGear = '',
     this.lastTrack = const [],
     this.lastTrackKm = 0,
+    this.activeTrail = const {},
   });
 
   /// Perfil inicial de quem acabou de se cadastrar — nível 1, desnível
@@ -209,6 +213,7 @@ class UserProfile {
     String? favoriteGear,
     List<double>? lastTrack,
     double? lastTrackKm,
+    Map<String, dynamic>? activeTrail,
   }) =>
       UserProfile(
         uid: uid,
@@ -244,6 +249,7 @@ class UserProfile {
         favoriteGear: favoriteGear ?? this.favoriteGear,
         lastTrack: lastTrack ?? this.lastTrack,
         lastTrackKm: lastTrackKm ?? this.lastTrackKm,
+        activeTrail: activeTrail ?? this.activeTrail,
       );
 
   Map<String, dynamic> toMap() => {
@@ -279,6 +285,7 @@ class UserProfile {
         'favoriteGear': favoriteGear,
         'lastTrack': lastTrack,
         'lastTrackKm': lastTrackKm,
+        'activeTrail': activeTrail,
       };
 
   factory UserProfile.fromMap(String uid, Map<String, dynamic> m) => UserProfile(
@@ -338,5 +345,6 @@ class UserProfile {
         favoriteGear: (m['favoriteGear'] as String?) ?? '',
         lastTrack: (m['lastTrack'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? const [],
         lastTrackKm: ((m['lastTrackKm'] as num?) ?? 0).toDouble(),
+        activeTrail: (m['activeTrail'] as Map?)?.map((k, v) => MapEntry(k as String, v)) ?? const {},
       );
 }

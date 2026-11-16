@@ -6,11 +6,6 @@ import '../../backend/geo/gpx_parser.dart';
 import '../theme/app_colors.dart';
 import 'app_label.dart';
 
-/// Cume do Pico Paraná (Serra do Marumbi, PR). Fonte: mountain-forecast.com,
-/// 25.25° S 48.81° W — é a coordenada real do cume, não ainda um traçado GPS
-/// real da rota (isso exige registrar o track em campo; ver README/roteiro).
-const picoParanaCenter = ll.LatLng(-25.25, -48.81);
-
 /// Mapa real (OpenStreetMap) que substitui a silhueta de relevo desenhada.
 ///
 /// Usa flutter_map + tiles públicos do OpenStreetMap em vez do Google Maps
@@ -26,7 +21,11 @@ class RouteMap extends StatefulWidget {
   /// GPX real da rota, em `assets/routes/` (ver README). Se o arquivo não
   /// existir, o mapa segue só com o marcador do cume — nunca um traçado
   /// inventado.
-  final String trackAsset;
+  final String? trackAsset;
+
+  /// Local da trilha em curso (cume). Nulo = sem localização cadastrada:
+  /// o mapa mostra o Brasil e avisa, em vez de chutar um lugar.
+  final ll.LatLng? center;
 
   /// Traçado gravado pelo GPS do usuário (verde) e sua posição agora.
   final List<ll.LatLng> recorded;
@@ -38,7 +37,8 @@ class RouteMap extends StatefulWidget {
     required this.labelBottomRight,
     required this.labelBottomRightColor,
     this.height = 170,
-    this.trackAsset = 'assets/routes/ruy_braga.gpx',
+    this.trackAsset,
+    this.center,
     this.recorded = const [],
     this.me,
   });
@@ -61,6 +61,11 @@ class _RouteMapState extends State<RouteMap> {
   @override
   void didUpdateWidget(RouteMap old) {
     super.didUpdateWidget(old);
+    if (widget.trackAsset != old.trackAsset) {
+      _track = const [];
+      _km = 0;
+      _load();
+    }
     final me = widget.me;
     if (me != null && me != old.me) {
       // Segue o usuário. Se o mapa ainda não está pronto, ignora.
@@ -71,8 +76,10 @@ class _RouteMapState extends State<RouteMap> {
   }
 
   Future<void> _load() async {
+    final asset = widget.trackAsset;
+    if (asset == null) return;
     try {
-      final pts = parseGpx(await rootBundle.loadString(widget.trackAsset));
+      final pts = parseGpx(await rootBundle.loadString(asset));
       if (!mounted || pts.length < 2) return;
       setState(() {
         _track = [for (final p in pts) ll.LatLng(p.lat, p.lon)];
@@ -87,6 +94,7 @@ class _RouteMapState extends State<RouteMap> {
   Widget build(BuildContext context) {
     final w = widget;
     final hasTrack = _track.length >= 2;
+    final center = w.center;
     return Container(
       height: w.height,
       clipBehavior: Clip.antiAlias,
@@ -99,12 +107,12 @@ class _RouteMapState extends State<RouteMap> {
         children: [
           Positioned.fill(
             child: FlutterMap(
-              key: ValueKey(_track.length),
+              key: ValueKey('${_track.length}-${center?.latitude}-${center?.longitude}'),
               mapController: _ctrl,
               options: MapOptions(
-                initialCenter: picoParanaCenter,
-                initialZoom: 12.5,
-                minZoom: 9,
+                initialCenter: center ?? const ll.LatLng(-14, -52),
+                initialZoom: center == null ? 3.5 : 12.5,
+                minZoom: center == null ? 3 : 9,
                 maxZoom: 17,
                 initialCameraFit: hasTrack
                     ? CameraFit.bounds(
@@ -160,12 +168,13 @@ class _RouteMapState extends State<RouteMap> {
                         height: 18,
                         child: const Icon(Icons.trip_origin, color: AppColors.green, size: 14),
                       ),
-                    const Marker(
-                      point: picoParanaCenter,
-                      width: 28,
-                      height: 28,
-                      child: Icon(Icons.flag_rounded, color: AppColors.amber, size: 20),
-                    ),
+                    if (center != null)
+                      Marker(
+                        point: center,
+                        width: 28,
+                        height: 28,
+                        child: const Icon(Icons.flag_rounded, color: AppColors.amber, size: 20),
+                      ),
                   ],
                 ),
                 const RichAttributionWidget(
@@ -182,6 +191,13 @@ class _RouteMapState extends State<RouteMap> {
             top: 10,
             child: AppLabel(hasTrack ? '${w.labelTopLeft} · TRAÇADO ${_km.toStringAsFixed(1).replaceAll('.', ',')} KM' : w.labelTopLeft, color: AppColors.dim, size: 8, tracking: 0.26),
           ),
+          if (center == null)
+            const Positioned(
+              left: 11,
+              top: 28,
+              child: AppLabel('SEM LOCALIZAÇÃO CADASTRADA PARA ESTA TRILHA',
+                  color: AppColors.amber, size: 8, tracking: 0.12),
+            ),
           Positioned(
             right: 11,
             bottom: 34,
