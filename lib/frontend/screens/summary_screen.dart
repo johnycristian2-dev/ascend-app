@@ -16,7 +16,7 @@ class SummaryScreen extends StatelessWidget {
     return Column(
       children: [
         ScreenBar('TRAVESSIA CONCLUÍDA',
-            sub: 'Travessia Ruy Braga · 2 dias',
+            sub: '${s.activeTrail.nome}${s.activeTrail.duracao.isEmpty ? '' : ' · ${s.activeTrail.duracao}'}',
             onBack: () => s.go('home')),
         Expanded(
           child: ListView(

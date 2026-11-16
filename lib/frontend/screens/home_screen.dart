@@ -29,10 +29,12 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   const AppLabel('EXPEDIÇÃO ATIVA', color: AppColors.dim, size: 9, tracking: 0.26),
                   const SizedBox(height: 5),
-                  Text('TRAVESSIA RUY BRAGA',
+                  Text(s.activeTrail.nome,
                       style: AppTypography.num(size: 22, color: AppColors.text)),
                   const SizedBox(height: 3),
-                  Text('28,4 km · +1 640 m · 2 dias',
+                  Text(
+                      '${fmtDec(s.activeKm)} km · +${fmtMil(s.activeM)} m'
+                      '${s.activeTrail.duracao.isEmpty ? '' : ' · ${s.activeTrail.duracao}'}',
                       style: AppTypography.body(size: 10, color: AppColors.text3)),
                 ],
               ),
@@ -81,7 +83,9 @@ class HomeScreen extends StatelessWidget {
 
         // Mapa real (OpenStreetMap), centrado no Pico Paraná — ver route_map.dart.
         RouteMap(
-          labelTopLeft: 'MAPA · PICO PARANÁ',
+          labelTopLeft: 'MAPA · ${s.activeTrail.regiao.isNotEmpty ? s.activeTrail.regiao.toUpperCase() : s.activeTrail.nome}',
+          center: s.activeTrail.temLocal ? ll.LatLng(s.activeTrail.lat!, s.activeTrail.lon!) : null,
+          trackAsset: s.activeTrail.id == 'seed-ruy-braga' ? 'assets/routes/ruy_braga.gpx' : null,
           labelBottomRight: cond.label,
           labelBottomRightColor: AppColors.tagInks[0],
           recorded: [for (final p in s.shownTrack) ll.LatLng(p.lat, p.lon)],

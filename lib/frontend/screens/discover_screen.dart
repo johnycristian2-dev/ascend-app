@@ -62,7 +62,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   child: Opacity(
                     opacity: locked ? .55 : 1,
                     child: AppPanel(
-                      onTap: locked ? null : () => s.go('plan'),
+                      onTap: locked ? null : () => s.selectTrail(t),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

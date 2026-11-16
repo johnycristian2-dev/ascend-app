@@ -22,6 +22,9 @@ class _PublishTrailScreenState extends State<PublishTrailScreen> {
   final _nota = TextEditingController();
   int _rank = 0;
   bool _sending = false;
+  bool _locating = false;
+  double? _lat;
+  double? _lon;
 
   @override
   void dispose() {
@@ -29,6 +32,21 @@ class _PublishTrailScreenState extends State<PublishTrailScreen> {
       c.dispose();
     }
     super.dispose();
+  }
+
+  Future<void> _useMyLocation(BuildContext c) async {
+    final s = Expedition.readOf(c);
+    s.locationError = null;
+    setState(() => _locating = true);
+    final p = await s.currentLocation();
+    if (!mounted) return;
+    setState(() {
+      _locating = false;
+      if (p != null) {
+        _lat = p.lat;
+        _lon = p.lon;
+      }
+    });
   }
 
   Future<void> _publish(BuildContext c) async {
@@ -42,6 +60,8 @@ class _PublishTrailScreenState extends State<PublishTrailScreen> {
       duracao: _duracao.text,
       regiao: _regiao.text,
       nota: _nota.text,
+      lat: _lat,
+      lon: _lon,
     );
     if (!mounted) return;
     setState(() => _sending = false);
@@ -92,6 +112,20 @@ class _PublishTrailScreenState extends State<PublishTrailScreen> {
               ),
               const SizedBox(height: 10),
               _Field(label: 'O QUE QUEM VAI PRECISA SABER', controller: _nota, lines: 3),
+              const SizedBox(height: 10),
+              const AppLabel('LOCALIZAÇÃO (para aparecer no mapa)', color: AppColors.dim, size: 9),
+              const SizedBox(height: 6),
+              AppButton(_locating ? 'LENDO GPS…' : 'USAR MINHA POSIÇÃO ATUAL',
+                  onTap: _locating ? null : () => _useMyLocation(c)),
+              const SizedBox(height: 6),
+              Text(
+                _lat != null
+                    ? 'Local marcado: ${_lat!.toStringAsFixed(5)}, ${_lon!.toStringAsFixed(5)}'
+                    : (s.locationError ?? 'Sem localização — a trilha aparece sem pino no mapa.'),
+                style: AppTypography.body(
+                    size: 10,
+                    color: _lat != null ? AppColors.green : AppColors.text3),
+              ),
               const SizedBox(height: 12),
               if (s.publishError != null)
                 Padding(

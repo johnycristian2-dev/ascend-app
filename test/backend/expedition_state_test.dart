@@ -210,4 +210,34 @@ void main() {
       s.dispose();
     });
   });
+
+  group('trilha em curso', () {
+    test('escolher uma trilha do catálogo muda a expedição, o plano e o XP', () {
+      final s = _novoEstado();
+      final baoBau = trailCatalogSeed.firstWhere((t) => t.id == 'seed-pedra-do-bau');
+      s.selectTrail(baoBau);
+      expect(s.activeTrail.id, 'seed-pedra-do-bau');
+      expect(s.screen, 'plan');
+      // Sem variantes de mochila a rota-base não muda; com elas, só o delta.
+      final deltaKm = s.core.km - 28.4;
+      expect(s.activeKm, closeTo(9.2 + deltaKm, 1e-9));
+      final xp0 = s.xpTotal;
+      s.finish();
+      expect(s.lastElevGain, s.activeM);
+      expect(s.xpTotal - xp0, s.lastXpGain);
+      s.dispose();
+    });
+
+    test('só trilhas com coordenada conferida têm local; as outras avisam', () {
+      final comLocal = trailCatalogSeed.where((t) => t.temLocal).map((t) => t.id).toSet();
+      expect(comLocal, {'seed-ruy-braga', 'seed-pedra-do-bau', 'seed-agulhas-negras'});
+    });
+
+    test('lat/lon fazem ida e volta no mapa do Firestore', () {
+      const t = CatalogTrail(
+          id: 'a', nome: 'N', rankIdx: 0, km: 1, ganhoM: 1, duracao: '', lat: -25.1, lon: -48.2);
+      final r = CatalogTrail.fromMap('a', t.toMap());
+      expect((r.lat, r.lon, r.temLocal), (-25.1, -48.2, true));
+    });
+  });
 }
