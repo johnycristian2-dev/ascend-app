@@ -8,6 +8,10 @@ import '../widgets/radio_composer.dart';
 import '../widgets/widgets.dart';
 
 /// Mapa da trilha: o painel de comando da expedição ativa.
+///
+/// O mapa é o protagonista: ocupa quase toda a tela. O resto (cabeçalho,
+/// indicadores e botões) fica compacto, em faixas finas ao redor dele. Os
+/// detalhes (dia 1, mochila, janela, recados) seguem a um toque de distância.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -17,82 +21,9 @@ class HomeScreen extends StatelessWidget {
     if (s.empty) return const _EmptyHome();
 
     final cond = condData[s.trail]!;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 26),
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const AppLabel('EXPEDIÇÃO ATIVA', color: AppColors.dim, size: 9, tracking: 0.26),
-                  const SizedBox(height: 5),
-                  Text(s.activeTrail.nome,
-                      style: AppTypography.num(size: 22, color: AppColors.text)),
-                  const SizedBox(height: 3),
-                  Text(
-                      '${fmtDec(s.activeKm)} km · +${fmtMil(s.activeM)} m'
-                      '${s.activeTrail.duracao.isEmpty ? '' : ' · ${s.activeTrail.duracao}'}',
-                      style: AppTypography.body(size: 10, color: AppColors.text3)),
-                  const SizedBox(height: 6),
-                  // Atalho visível para escolher outra trilha (antes só havia
-                  // o botão no fim da tela).
-                  InkWell(
-                    onTap: () => s.go('discover'),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 4),
-                      child: AppLabel('TROCAR TRILHA ›', color: AppColors.amber, size: 9, tracking: 0.2),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                AppTag('RANK ${s.rank}', AppColors.amber),
-                const SizedBox(height: 6),
-                Text('NV ${s.level}', style: AppTypography.num(size: 15, color: AppColors.text2)),
-              ],
-            ),
-            const SizedBox(width: 8),
-            InkWell(
-              onTap: s.enterField,
-              borderRadius: r4,
-              child: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  border: Border.all(color: AppColors.border),
-                  borderRadius: r4,
-                ),
-                child: const Icon(Icons.terrain, size: 17, color: AppColors.text2),
-              ),
-            ),
-            const SizedBox(width: 8),
-            InkWell(
-              onTap: () => openRadioComposer(c),
-              borderRadius: r4,
-              child: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  border: Border.all(color: AppColors.border),
-                  borderRadius: r4,
-                ),
-                child: const Icon(Icons.radio_outlined, size: 17, color: AppColors.text2),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
 
-        // Mapa real (OpenStreetMap), centrado no Pico Paraná — ver route_map.dart.
-        RouteMap(
+    Widget mapa(double h) => RouteMap(
+          height: h,
           labelTopLeft: 'MAPA · ${s.activeTrail.regiao.isNotEmpty ? s.activeTrail.regiao.toUpperCase() : s.activeTrail.nome}',
           center: s.activeTrail.temLocal ? ll.LatLng(s.activeTrail.lat!, s.activeTrail.lon!) : null,
           trackAsset: s.activeTrail.id == 'seed-ruy-braga' ? 'assets/routes/ruy_braga.gpx' : null,
@@ -100,188 +31,197 @@ class HomeScreen extends StatelessWidget {
           labelBottomRightColor: AppColors.tagInks[0],
           recorded: [for (final p in s.shownTrack) ll.LatLng(p.lat, p.lon)],
           me: s.myPos == null ? null : ll.LatLng(s.myPos!.lat, s.myPos!.lon),
-        ),
-        const SizedBox(height: 8),
-        // GPS em tempo real: acompanha a posição e grava o traçado da subida.
-        Row(
-          children: [
-            Expanded(
-              child: AppButton(s.tracking ? 'PARAR GPS' : 'INICIAR GPS',
-                  onTap: s.tracking ? s.stopTracking : s.startTracking),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                s.locationError ??
-                    (s.tracking
-                        ? 'GPS ligado · ${fmtDec(s.shownTrackKm, 2)} km gravados'
-                        : s.shownTrack.length >= 2
-                            ? 'Último traçado: ${fmtDec(s.shownTrackKm, 2)} km'
-                            : 'GPS desligado'),
-                style: AppTypography.body(
-                    size: 10,
-                    color: s.locationError != null ? AppColors.amber : AppColors.text2),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
+        );
 
-        // Janela de partida: a pressão que move todo o resto.
-        AppPanel(
-          onTap: () => s.go('window'),
-          bg: AppColors.bgWarn,
-          borderColor: AppColors.borderWarn,
+    final header = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const AppLabel('JANELA FECHA EM', color: AppColors.amber, size: 9, tracking: 0.26),
-                  AppLabel(s.wx.label, color: AppColors.text2, size: 9),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(fmtClock(s.wxSec),
-                  style: AppTypography.num(size: 32, color: AppColors.textStrong)),
-              const SizedBox(height: 8),
-              Text(s.wx.note, style: AppTypography.body(size: 10)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // Tudo aqui é derivado de day1Min — nunca guardado.
-        AppPanel(
-          onTap: () => s.go('route'),
-          borderColor: s.core.conflicts.isEmpty ? AppColors.border : AppColors.borderWarn,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const AppLabel('DIA 1 · ATÉ O ABRIGO'),
-                  AppLabel('${s.slot.depDay} · ${s.slot.dep}', color: AppColors.dim, size: 9),
-                ],
-              ),
-              const SizedBox(height: 12),
+              Text(s.activeTrail.nome,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.num(size: 16, color: AppColors.text)),
+              const SizedBox(height: 2),
               Row(
                 children: [
-                  Expanded(child: AppStat('DISTÂNCIA', '${fmtDec(s.core.km)} km')),
-                  Expanded(child: AppStat('SUBIDA', '+${fmtMil(s.core.m)} m')),
-                  Expanded(
-                    child: AppStat('CHEGADA', s.arrive,
-                        color: s.dark ? AppColors.amber : AppColors.textStrong),
+                  Flexible(
+                    child: Text(
+                        '${fmtDec(s.activeKm)} km · +${fmtMil(s.activeM)} m'
+                        '${s.activeTrail.duracao.isEmpty ? '' : ' · ${s.activeTrail.duracao}'}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.body(size: 9.5, color: AppColors.text3)),
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Divider(color: AppColors.border, height: 1),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const AppLabel('MARGEM DE LUZ', color: AppColors.dim, size: 9),
-                  Text(
-                    s.lightMargin >= 0
-                        ? fmtDelta(s.lightMargin)
-                        : '-${fmtDelta(-s.lightMargin)}',
-                    style: AppTypography.num(
-                        size: 14,
-                        color: s.lightMargin >= 0 ? AppColors.green : AppColors.amber),
+                  const SizedBox(width: 10),
+                  InkWell(
+                    onTap: () => s.go('discover'),
+                    child: const AppLabel('TROCAR ›', color: AppColors.amber, size: 8.5, tracking: 0.2),
                   ),
                 ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 10),
-
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: AppPanel(
-                onTap: () => s.go('pack'),
-                bg: s.overweight ? AppColors.bgWarn : AppColors.surface,
-                borderColor: s.overweight ? AppColors.borderWarn : AppColors.border,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const AppLabel('MOCHILA'),
-                    const SizedBox(height: 10),
-                    Text('${fmtDec(s.kg)} kg',
-                        style: AppTypography.num(
-                            size: 21,
-                            color: s.overweight
-                                ? AppColors.amber
-                                : s.kg > 10.8
-                                    ? AppColors.blue
-                                    : AppColors.green)),
-                    const SizedBox(height: 9),
-                    AppProgressBar((s.kg / 15).clamp(0, 1),
-                        color: s.overweight
-                            ? AppColors.amber
-                            : s.kg > 10.8
-                                ? AppColors.blue
-                                : AppColors.green),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: AppPanel(
-                onTap: () => s.go('relay'),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const AppLabel('BASTÃO'),
-                    const SizedBox(height: 10),
-                    Text('${s.relayCount}', style: AppTypography.num(size: 21)),
-                    const SizedBox(height: 9),
-                    const AppLabel('RECADOS NA ROTA', color: AppColors.dim, size: 8),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        if (s.core.conflicts.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          AppPanel(
-            bg: AppColors.bgWarn,
-            borderColor: AppColors.borderWarn,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppLabel(
-                    s.core.conflicts.length == 1
-                        ? 'A PARTIDA EXIGE 1 ITEM QUE FICOU EM CASA'
-                        : 'A PARTIDA EXIGE ${s.core.conflicts.length} ITENS QUE FICARAM EM CASA',
-                    color: AppColors.amber,
-                    size: 9),
-                const SizedBox(height: 8),
-                Text(s.core.conflicts.join(' · '),
-                    style: AppTypography.body(size: 10, color: AppColors.text2)),
-              ],
-            ),
-          ),
-        ],
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(child: AppButton('DESCOBRIR TRILHAS', onTap: () => s.go('discover'))),
-            const SizedBox(width: 10),
-            Expanded(child: AppButton('CONCLUIR TRAVESSIA', onTap: s.finish, primary: true)),
-          ],
-        ),
+        const SizedBox(width: 8),
+        AppTag('RANK ${s.rank}', AppColors.amber),
+        const SizedBox(width: 8),
+        _IconBtn(Icons.terrain, s.enterField),
+        const SizedBox(width: 6),
+        _IconBtn(Icons.radio_outlined, () => openRadioComposer(c)),
       ],
     );
+
+    // Faixa de indicadores: pequena de propósito, o mapa é quem manda.
+    final chips = Row(
+      children: [
+        Expanded(
+          child: _Mini('JANELA', fmtClock(s.wxSec), AppColors.amber, () => s.go('window'),
+              warn: true),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: _Mini('CHEGADA', s.arrive,
+              s.dark ? AppColors.amber : AppColors.textStrong, () => s.go('route')),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: _Mini(
+              'MOCHILA',
+              '${fmtDec(s.kg)} kg',
+              s.overweight ? AppColors.amber : AppColors.green,
+              () => s.go('pack'),
+              warn: s.overweight),
+        ),
+        const SizedBox(width: 6),
+        Expanded(child: _Mini('BASTÃO', '${s.relayCount}', AppColors.textStrong, () => s.go('relay'))),
+      ],
+    );
+
+    final gpsStatus = Text(
+      s.locationError ??
+          (s.tracking
+              ? 'GPS ligado · ${fmtDec(s.shownTrackKm, 2)} km gravados'
+              : s.shownTrack.length >= 2
+                  ? 'Último traçado: ${fmtDec(s.shownTrackKm, 2)} km'
+                  : 'GPS desligado'),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: AppTypography.body(
+          size: 9.5, color: s.locationError != null ? AppColors.amber : AppColors.text2),
+    );
+
+    final conflicts = s.core.conflicts.isEmpty
+        ? null
+        : Text(
+            s.core.conflicts.length == 1
+                ? 'A partida exige 1 item que ficou em casa'
+                : 'A partida exige ${s.core.conflicts.length} itens que ficaram em casa',
+            style: AppTypography.body(size: 9.5, color: AppColors.amber));
+
+    final actions = Row(
+      children: [
+        Expanded(
+          child: AppButton(s.tracking ? 'PARAR GPS' : 'INICIAR GPS',
+              onTap: s.tracking ? s.stopTracking : s.startTracking),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: AppButton('CONCLUIR', onTap: s.finish, primary: true)),
+      ],
+    );
+
+    final bottom = <Widget>[
+      const SizedBox(height: 6),
+      gpsStatus,
+      const SizedBox(height: 8),
+      chips,
+      if (conflicts != null) ...[const SizedBox(height: 6), conflicts],
+      const SizedBox(height: 8),
+      actions,
+    ];
+
+    return LayoutBuilder(builder: (context, box) {
+      final tall = box.maxHeight >= 560;
+      if (tall) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              header,
+              const SizedBox(height: 8),
+              Expanded(child: mapa(double.infinity)),
+              ...bottom,
+            ],
+          ),
+        );
+      }
+      // Tela baixa (janela pequena/paisagem): mantém o mapa grande e deixa
+      // o resto rolar, em vez de estourar o layout.
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+        children: [header, const SizedBox(height: 8), mapa(360), ...bottom],
+      );
+    });
   }
+}
+
+class _IconBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _IconBtn(this.icon, this.onTap);
+
+  @override
+  Widget build(BuildContext c) => InkWell(
+        onTap: onTap,
+        borderRadius: r4,
+        child: Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border.all(color: AppColors.border),
+            borderRadius: r4,
+          ),
+          child: Icon(icon, size: 16, color: AppColors.text2),
+        ),
+      );
+}
+
+class _Mini extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final VoidCallback onTap;
+  final bool warn;
+  const _Mini(this.label, this.value, this.color, this.onTap, {this.warn = false});
+
+  @override
+  Widget build(BuildContext c) => InkWell(
+        onTap: onTap,
+        borderRadius: r4,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: warn ? AppColors.bgWarn : AppColors.surface,
+            border: Border.all(color: warn ? AppColors.borderWarn : AppColors.border),
+            borderRadius: r4,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppLabel(label, color: AppColors.dim, size: 7.5, tracking: 0.16),
+              const SizedBox(height: 3),
+              Text(value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.num(size: 13, color: color)),
+            ],
+          ),
+        ),
+      );
 }
 
 class _EmptyHome extends StatelessWidget {
