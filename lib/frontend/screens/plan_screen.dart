@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../app.dart';
 import '../../backend/state/expedition_calculator.dart';
+import '../../backend/state/expedition_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/widgets.dart';
@@ -8,6 +11,19 @@ import '../widgets/widgets.dart';
 /// Nova expedição: trilha, data e o que a cordada leva.
 class PlanScreen extends StatelessWidget {
   const PlanScreen({super.key});
+
+  Future<void> _importGpx(BuildContext c, ExpeditionState s) async {
+    final msg = ScaffoldMessenger.of(c);
+    try {
+      final f = await FilePicker.pickFile(type: FileType.custom, allowedExtensions: ['gpx', 'xml']);
+      if (f == null) return;
+      final xml = utf8.decode(await f.readAsBytes(), allowMalformed: true);
+      final erro = s.importGpx(xml);
+      msg.showSnackBar(SnackBar(content: Text(erro ?? 'Traçado importado para ${s.activeTrail.nome}.')));
+    } catch (_) {
+      msg.showSnackBar(const SnackBar(content: Text('Não consegui ler esse arquivo.')));
+    }
+  }
 
   @override
   Widget build(BuildContext c) {
@@ -39,6 +55,35 @@ class PlanScreen extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               AppButton('TROCAR TRILHA', onTap: () => s.go('discover')),
+              const SizedBox(height: 6),
+              // Traçado real da trilha: importado pelo usuário (arquivo .gpx
+              // de Wikiloc, AllTrails etc.). O app nunca desenha um traçado
+              // inventado.
+              AppButton(
+                  s.activeGpx.isEmpty ? 'IMPORTAR TRAÇADO (GPX)' : 'TROCAR TRAÇADO (GPX)',
+                  onTap: () => _importGpx(c, s)),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      s.activeGpx.isEmpty
+                          ? 'Sem traçado: o mapa mostra só o ponto da trilha.'
+                          : 'Traçado importado: ${s.activeGpx.length} pontos · ${fmtDec(s.activeGpxKm)} km',
+                      style: AppTypography.body(
+                          size: 10, color: s.activeGpx.isEmpty ? AppColors.text3 : AppColors.green),
+                    ),
+                  ),
+                  if (s.activeGpx.isNotEmpty)
+                    InkWell(
+                      onTap: s.removerGpx,
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: AppLabel('REMOVER', color: AppColors.amber, size: 8.5, tracking: 0.2),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 14),
               const AppLabel('DATA DE PARTIDA', size: 9, tracking: 0.26),
               const SizedBox(height: 8),

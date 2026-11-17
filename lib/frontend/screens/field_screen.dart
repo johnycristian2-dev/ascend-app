@@ -51,6 +51,8 @@ class FieldScreen extends StatelessWidget {
                     labelBottomRight: s.tracking ? 'AO VIVO' : 'GPS DESLIGADO',
                     labelBottomRightColor: s.tracking ? AppColors.green : AppColors.amber,
                     center: s.activeTrail.temLocal ? ll.LatLng(s.activeTrail.lat!, s.activeTrail.lon!) : null,
+          aprox: s.activeTrail.aprox,
+          track: [for (final p in s.activeGpx) ll.LatLng(p.lat, p.lon)],
                     trackAsset: s.activeTrail.id == 'seed-ruy-braga' ? 'assets/routes/ruy_braga.gpx' : null,
                     recorded: [for (final p in s.shownTrack) ll.LatLng(p.lat, p.lon)],
                     me: s.myPos == null ? null : ll.LatLng(s.myPos!.lat, s.myPos!.lon),

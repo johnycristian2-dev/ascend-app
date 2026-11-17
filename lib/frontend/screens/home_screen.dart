@@ -26,6 +26,8 @@ class HomeScreen extends StatelessWidget {
           height: h,
           labelTopLeft: 'MAPA · ${s.activeTrail.regiao.isNotEmpty ? s.activeTrail.regiao.toUpperCase() : s.activeTrail.nome}',
           center: s.activeTrail.temLocal ? ll.LatLng(s.activeTrail.lat!, s.activeTrail.lon!) : null,
+          aprox: s.activeTrail.aprox,
+          track: [for (final p in s.activeGpx) ll.LatLng(p.lat, p.lon)],
           trackAsset: s.activeTrail.id == 'seed-ruy-braga' ? 'assets/routes/ruy_braga.gpx' : null,
           labelBottomRight: cond.label,
           labelBottomRightColor: AppColors.tagInks[0],

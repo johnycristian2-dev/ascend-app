@@ -3,8 +3,10 @@ import '../models/catalog_trail_model.dart';
 /// Curadoria embutida: as trilhas que o app já mostrava desde o protótipo.
 /// Localização só onde há coordenada conferida em fonte pública (cume):
 /// Pico Paraná (mountain-forecast.com), Agulhas Negras (mountain-forecast.com)
-/// e Pedra do Baú (Wikipédia). Marins e Prateleiras ficam sem localização —
-/// o mapa avisa em vez de chutar.
+/// Pedra do Baú (Wikipédia) e Pico dos Marins (peakvisor.com). Prateleiras
+/// fica no Parque Nacional do Itatiaia, ao lado das Agulhas Negras: usa o
+/// ponto das Agulhas Negras marcado como APROXIMADO (`aprox`) — o mapa leva
+/// à região e avisa que não é o cume exato.
 /// Os números são os do protótipo (referência), não medições — quem sobe
 /// deve conferir antes. É também o que aparece se a coleção da comunidade
 /// estiver indisponível (sem rede ou regras ainda não publicadas).
@@ -22,8 +24,10 @@ const trailCatalogSeed = <CatalogTrail>[
       lat: -22.38, lon: -44.66),
   CatalogTrail(
       id: 'seed-prateleiras', nome: 'PRATELEIRAS', rankIdx: 2, km: 11.8, ganhoM: 640,
-      duracao: '1 dia', nota: 'campo de blocos sem marcação', autorNome: 'Ascend', fonte: 'curadoria'),
+      duracao: '1 dia', nota: 'campo de blocos sem marcação', autorNome: 'Ascend', fonte: 'curadoria',
+      lat: -22.38, lon: -44.66, aprox: true),
   CatalogTrail(
       id: 'seed-pico-dos-marins', nome: 'PICO DOS MARINS', rankIdx: 2, km: 12.4, ganhoM: 1020,
-      duracao: '1 dia', nota: 'vento constante na crista', autorNome: 'Ascend', fonte: 'curadoria'),
+      duracao: '1 dia', nota: 'vento constante na crista', autorNome: 'Ascend', fonte: 'curadoria',
+      lat: -22.503093, lon: -45.121272),
 ];

@@ -31,6 +31,20 @@ class RouteMap extends StatefulWidget {
   final List<ll.LatLng> recorded;
   final ll.LatLng? me;
 
+  /// Traçado GPX que o usuário importou para esta trilha (âmbar). Tem
+  /// prioridade sobre o arquivo de `trackAsset`.
+  final List<ll.LatLng> track;
+
+  /// O ponto `center` é só a região da trilha, não o cume exato.
+  final bool aprox;
+
+  /// Modo "escolher no mapa": toque define `picked` e chama [onPick].
+  final ValueChanged<ll.LatLng>? onPick;
+  final ll.LatLng? picked;
+
+  /// Mostra o aviso "sem localização" quando `center` é nulo.
+  final bool avisarSemLocal;
+
   const RouteMap({
     super.key,
     required this.labelTopLeft,
@@ -41,6 +55,11 @@ class RouteMap extends StatefulWidget {
     this.center,
     this.recorded = const [],
     this.me,
+    this.track = const [],
+    this.aprox = false,
+    this.onPick,
+    this.picked,
+    this.avisarSemLocal = true,
   });
 
   @override
@@ -93,8 +112,16 @@ class _RouteMapState extends State<RouteMap> {
   @override
   Widget build(BuildContext context) {
     final w = widget;
-    final hasTrack = _track.length >= 2;
+    final line = w.track.length >= 2 ? w.track : _track;
+    final km = w.track.length >= 2
+        ? trackLengthKm([for (final p in w.track) GeoPoint(p.latitude, p.longitude)])
+        : _km;
+    final hasTrack = line.length >= 2;
     final center = w.center;
+    final toSummitKm = (w.me != null && center != null)
+        ? distanceKmBetween(GeoPoint(w.me!.latitude, w.me!.longitude),
+            GeoPoint(center.latitude, center.longitude))
+        : null;
     return Container(
       height: w.height,
       clipBehavior: Clip.antiAlias,
@@ -107,16 +134,17 @@ class _RouteMapState extends State<RouteMap> {
         children: [
           Positioned.fill(
             child: FlutterMap(
-              key: ValueKey('${_track.length}-${center?.latitude}-${center?.longitude}'),
+              key: ValueKey('${line.length}-${center?.latitude}-${center?.longitude}'),
               mapController: _ctrl,
               options: MapOptions(
                 initialCenter: center ?? const ll.LatLng(-14, -52),
                 initialZoom: center == null ? 3.5 : 12.5,
                 minZoom: center == null ? 3 : 9,
                 maxZoom: 17,
+                onTap: w.onPick == null ? null : (_, p) => w.onPick!(p),
                 initialCameraFit: hasTrack
                     ? CameraFit.bounds(
-                        bounds: LatLngBounds.fromPoints(_track),
+                        bounds: LatLngBounds.fromPoints(line),
                         padding: const EdgeInsets.all(28),
                         maxZoom: 16,
                       )
@@ -140,7 +168,16 @@ class _RouteMapState extends State<RouteMap> {
                 ),
                 if (hasTrack)
                   PolylineLayer(polylines: [
-                    Polyline(points: _track, strokeWidth: 3.5, color: AppColors.amber),
+                    Polyline(points: line, strokeWidth: 3.5, color: AppColors.amber),
+                  ]),
+                if (toSummitKm != null)
+                  PolylineLayer(polylines: [
+                    Polyline(
+                      points: [w.me!, center!],
+                      strokeWidth: 2.5,
+                      color: AppColors.blue,
+                      pattern: StrokePattern.dashed(segments: const [7, 7]),
+                    ),
                   ]),
                 if (w.recorded.length >= 2)
                   PolylineLayer(polylines: [
@@ -161,9 +198,16 @@ class _RouteMapState extends State<RouteMap> {
                           ),
                         ),
                       ),
+                    if (w.picked != null)
+                      Marker(
+                        point: w.picked!,
+                        width: 34,
+                        height: 34,
+                        child: const Icon(Icons.location_on, color: AppColors.amber, size: 32),
+                      ),
                     if (hasTrack)
                       Marker(
-                        point: _track.first,
+                        point: line.first,
                         width: 18,
                         height: 18,
                         child: const Icon(Icons.trip_origin, color: AppColors.green, size: 14),
@@ -189,9 +233,24 @@ class _RouteMapState extends State<RouteMap> {
           Positioned(
             left: 11,
             top: 10,
-            child: AppLabel(hasTrack ? '${w.labelTopLeft} · TRAÇADO ${_km.toStringAsFixed(1).replaceAll('.', ',')} KM' : w.labelTopLeft, color: AppColors.dim, size: 8, tracking: 0.26),
+            child: AppLabel(
+                hasTrack
+                    ? '${w.labelTopLeft} · TRAÇADO ${km.toStringAsFixed(1).replaceAll('.', ',')} KM'
+                    : toSummitKm != null
+                        ? '${w.labelTopLeft} · A ${toSummitKm.toStringAsFixed(1).replaceAll('.', ',')} KM DO PONTO'
+                        : w.labelTopLeft,
+                color: AppColors.dim,
+                size: 8,
+                tracking: 0.26),
           ),
-          if (center == null)
+          if (center != null && w.aprox)
+            const Positioned(
+              left: 11,
+              top: 28,
+              child: AppLabel('LOCAL APROXIMADO · REGIÃO DA TRILHA, NÃO O CUME EXATO',
+                  color: AppColors.amber, size: 8, tracking: 0.12),
+            ),
+          if (center == null && w.avisarSemLocal)
             const Positioned(
               left: 11,
               top: 28,

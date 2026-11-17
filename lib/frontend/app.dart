@@ -19,6 +19,7 @@ import 'screens/plan_screen.dart';
 import 'screens/party_screen.dart';
 import 'screens/watch_screen.dart';
 import 'screens/chat_screen.dart';
+import 'screens/cordadas_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/achievements_screen.dart';
@@ -148,6 +149,7 @@ class Shell extends StatelessWidget {
         'party' => const PartyScreen(),
         'watch' => const WatchScreen(),
         'chat' => const ChatScreen(),
+        'cordadas' => const CordadasScreen(),
         'profile' => const ProfileScreen(),
         'inv' => const InventoryScreen(),
         'ach' => const AchievementsScreen(),

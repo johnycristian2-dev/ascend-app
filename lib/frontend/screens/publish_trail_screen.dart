@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart' as ll;
 import '../app.dart';
 import '../../backend/state/expedition_state.dart' show ranks;
 import '../theme/app_colors.dart';
@@ -25,6 +26,8 @@ class _PublishTrailScreenState extends State<PublishTrailScreen> {
   bool _locating = false;
   double? _lat;
   double? _lon;
+  ll.LatLng? _focus; // só muda quando a posição vem do GPS (move a câmera)
+  String? _erro;
 
   @override
   void dispose() {
@@ -45,13 +48,22 @@ class _PublishTrailScreenState extends State<PublishTrailScreen> {
       if (p != null) {
         _lat = p.lat;
         _lon = p.lon;
+        _focus = ll.LatLng(p.lat, p.lon);
       }
     });
   }
 
   Future<void> _publish(BuildContext c) async {
     final s = Expedition.readOf(c);
-    setState(() => _sending = true);
+    // Uma trilha sem lugar não leva a lugar nenhum no mapa: exige o ponto.
+    if (_lat == null || _lon == null) {
+      setState(() => _erro = 'Marque o local da trilha no mapa antes de publicar.');
+      return;
+    }
+    setState(() {
+      _erro = null;
+      _sending = true;
+    });
     final ok = await s.publishTrail(
       nome: _nome.text,
       rankIdx: _rank,
@@ -113,7 +125,23 @@ class _PublishTrailScreenState extends State<PublishTrailScreen> {
               const SizedBox(height: 10),
               _Field(label: 'O QUE QUEM VAI PRECISA SABER', controller: _nota, lines: 3),
               const SizedBox(height: 10),
-              const AppLabel('LOCALIZAÇÃO (para aparecer no mapa)', color: AppColors.dim, size: 9),
+              const AppLabel('LOCALIZAÇÃO · TOQUE NO MAPA PARA MARCAR O INÍCIO OU O CUME',
+                  color: AppColors.dim, size: 9),
+              const SizedBox(height: 6),
+              RouteMap(
+                height: 260,
+                labelTopLeft: 'ESCOLHER LOCAL',
+                labelBottomRight: _lat == null ? 'NENHUM PONTO' : 'PONTO MARCADO',
+                labelBottomRightColor: _lat == null ? AppColors.amber : AppColors.green,
+                center: _focus,
+                avisarSemLocal: false,
+                picked: _lat == null ? null : ll.LatLng(_lat!, _lon!),
+                onPick: (p) => setState(() {
+                  _lat = p.latitude;
+                  _lon = p.longitude;
+                  _erro = null;
+                }),
+              ),
               const SizedBox(height: 6),
               AppButton(_locating ? 'LENDO GPS…' : 'USAR MINHA POSIÇÃO ATUAL',
                   onTap: _locating ? null : () => _useMyLocation(c)),
@@ -121,12 +149,17 @@ class _PublishTrailScreenState extends State<PublishTrailScreen> {
               Text(
                 _lat != null
                     ? 'Local marcado: ${_lat!.toStringAsFixed(5)}, ${_lon!.toStringAsFixed(5)}'
-                    : (s.locationError ?? 'Sem localização — a trilha aparece sem pino no mapa.'),
+                    : (s.locationError ?? 'Sem ponto marcado: toque no mapa ou use sua posição.'),
                 style: AppTypography.body(
                     size: 10,
                     color: _lat != null ? AppColors.green : AppColors.text3),
               ),
               const SizedBox(height: 12),
+              if (_erro != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(_erro!, style: AppTypography.body(size: 10, color: AppColors.amber)),
+                ),
               if (s.publishError != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
