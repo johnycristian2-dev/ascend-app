@@ -228,9 +228,17 @@ void main() {
       s.dispose();
     });
 
-    test('só trilhas com coordenada conferida têm local; as outras avisam', () {
-      final comLocal = trailCatalogSeed.where((t) => t.temLocal).map((t) => t.id).toSet();
-      expect(comLocal, {'seed-ruy-braga', 'seed-pedra-do-bau', 'seed-agulhas-negras'});
+    test('toda trilha curada leva a um ponto do mapa; só Prateleiras é aproximada', () {
+      expect(trailCatalogSeed.every((t) => t.temLocal), isTrue);
+      final aprox = trailCatalogSeed.where((t) => t.aprox).map((t) => t.id).toSet();
+      expect(aprox, {'seed-prateleiras'});
+    });
+
+    test('aprox faz ida e volta no mapa do Firestore', () {
+      const t = CatalogTrail(
+          id: 'a', nome: 'N', rankIdx: 0, km: 1, ganhoM: 1, duracao: '', lat: 1, lon: 2, aprox: true);
+      expect(CatalogTrail.fromMap('a', t.toMap()).aprox, isTrue);
+      expect(CatalogTrail.fromMap('b', {'nome': 'x'}).aprox, isFalse);
     });
 
     test('lat/lon fazem ida e volta no mapa do Firestore', () {
@@ -238,6 +246,68 @@ void main() {
           id: 'a', nome: 'N', rankIdx: 0, km: 1, ganhoM: 1, duracao: '', lat: -25.1, lon: -48.2);
       final r = CatalogTrail.fromMap('a', t.toMap());
       expect((r.lat, r.lon, r.temLocal), (-25.1, -48.2, true));
+    });
+  });
+
+  group('cordada (demonstração)', () {
+    test('começa na Cordada Sul, sai e entra em outra', () {
+      final s = _novoEstado();
+      expect(s.cordada?.id, 'sul');
+      s.sairCordada();
+      expect(s.cordada, isNull);
+      expect(s.cordadaId, '');
+      s.entrarCordada('madrugadores');
+      expect(s.cordada?.nome, 'MADRUGADORES');
+      expect(s.screen, 'chat');
+      s.dispose();
+    });
+
+    test('id desconhecido não entra em cordada nenhuma', () {
+      final s = _novoEstado();
+      s.entrarCordada('nao-existe');
+      expect(s.cordadaId, 'sul');
+      s.dispose();
+    });
+  });
+
+  group('traçado GPX importado', () {
+    const gpx = '<gpx><trk><trkseg>'
+        '<trkpt lat="-25.25" lon="-48.81"></trkpt>'
+        '<trkpt lat="-25.26" lon="-48.82"></trkpt>'
+        '<trkpt lat="-25.27" lon="-48.83"></trkpt>'
+        '</trkseg></trk></gpx>';
+
+    test('só vale para a trilha para a qual foi importado', () {
+      final s = _novoEstado();
+      expect(s.importGpx(gpx), isNull);
+      expect(s.activeGpx.length, 3);
+      expect(s.activeGpxKm, greaterThan(0));
+      s.activeTrail = trailCatalogSeed[1];
+      expect(s.activeGpx, isEmpty);
+      s.dispose();
+    });
+
+    test('arquivo sem traçado é recusado e não inventa pontos', () {
+      final s = _novoEstado();
+      expect(s.importGpx('<gpx></gpx>'), isNotNull);
+      expect(s.activeGpx, isEmpty);
+      s.dispose();
+    });
+
+    test('traçado grande é reduzido a 800 pontos mantendo início e fim', () {
+      final s = _novoEstado();
+      final big = StringBuffer('<gpx><trk><trkseg>');
+      for (var i = 0; i < 3000; i++) {
+        big.write('<trkpt lat="${-25 - i * 0.0001}" lon="-48.8"></trkpt>');
+      }
+      big.write('</trkseg></trk></gpx>');
+      expect(s.importGpx(big.toString()), isNull);
+      expect(s.activeGpx.length, 800);
+      expect(s.activeGpx.first.lat, -25.0);
+      expect(s.activeGpx.last.lat, closeTo(-25 - 2999 * 0.0001, 1e-9));
+      s.removerGpx();
+      expect(s.activeGpx, isEmpty);
+      s.dispose();
     });
   });
 }

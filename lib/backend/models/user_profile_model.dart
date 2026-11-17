@@ -111,6 +111,15 @@ class UserProfile {
   final List<double> lastTrack;
   final double lastTrackKm;
 
+  /// Cordada em que o usuário está ('' = nenhuma). Demonstração: ver
+  /// `cordada_catalog.dart`.
+  final String cordadaId;
+
+  /// Traçado GPX importado pelo usuário para a trilha `gpxTrailId` (lat,lon
+  /// alternados), no máximo 800 pontos.
+  final String gpxTrailId;
+  final List<double> gpxTrack;
+
   /// Trilha em curso (cópia de `CatalogTrail.toMap()` + 'id'); vazio = a padrão.
   final Map<String, dynamic> activeTrail;
 
@@ -148,6 +157,9 @@ class UserProfile {
     this.favoriteGear = '',
     this.lastTrack = const [],
     this.lastTrackKm = 0,
+    this.cordadaId = 'sul',
+    this.gpxTrailId = '',
+    this.gpxTrack = const [],
     this.activeTrail = const {},
   });
 
@@ -213,6 +225,9 @@ class UserProfile {
     String? favoriteGear,
     List<double>? lastTrack,
     double? lastTrackKm,
+    String? cordadaId,
+    String? gpxTrailId,
+    List<double>? gpxTrack,
     Map<String, dynamic>? activeTrail,
   }) =>
       UserProfile(
@@ -249,6 +264,9 @@ class UserProfile {
         favoriteGear: favoriteGear ?? this.favoriteGear,
         lastTrack: lastTrack ?? this.lastTrack,
         lastTrackKm: lastTrackKm ?? this.lastTrackKm,
+        cordadaId: cordadaId ?? this.cordadaId,
+        gpxTrailId: gpxTrailId ?? this.gpxTrailId,
+        gpxTrack: gpxTrack ?? this.gpxTrack,
         activeTrail: activeTrail ?? this.activeTrail,
       );
 
@@ -285,6 +303,9 @@ class UserProfile {
         'favoriteGear': favoriteGear,
         'lastTrack': lastTrack,
         'lastTrackKm': lastTrackKm,
+        'cordadaId': cordadaId,
+        'gpxTrailId': gpxTrailId,
+        'gpxTrack': gpxTrack,
         'activeTrail': activeTrail,
       };
 
@@ -345,6 +366,9 @@ class UserProfile {
         favoriteGear: (m['favoriteGear'] as String?) ?? '',
         lastTrack: (m['lastTrack'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? const [],
         lastTrackKm: ((m['lastTrackKm'] as num?) ?? 0).toDouble(),
+        cordadaId: (m['cordadaId'] as String?) ?? 'sul',
+        gpxTrailId: (m['gpxTrailId'] as String?) ?? '',
+        gpxTrack: (m['gpxTrack'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? const [],
         activeTrail: (m['activeTrail'] as Map?)?.map((k, v) => MapEntry(k as String, v)) ?? const {},
       );
 }

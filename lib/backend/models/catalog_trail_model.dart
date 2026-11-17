@@ -20,6 +20,10 @@ class CatalogTrail {
   final double? lat;
   final double? lon;
 
+  /// true quando o ponto é só a região da trilha (não o cume nem o início):
+  /// o mapa leva até lá e diz que é aproximado, em vez de fingir precisão.
+  final bool aprox;
+
   const CatalogTrail({
     required this.id,
     required this.nome,
@@ -35,6 +39,7 @@ class CatalogTrail {
     this.criadoEmMs = 0,
     this.lat,
     this.lon,
+    this.aprox = false,
   });
 
   bool get temLocal => lat != null && lon != null;
@@ -55,6 +60,7 @@ class CatalogTrail {
         'criadoEmMs': criadoEmMs,
         if (lat != null) 'lat': lat,
         if (lon != null) 'lon': lon,
+        if (aprox) 'aprox': true,
       };
 
   factory CatalogTrail.fromMap(String id, Map<String, dynamic> m) => CatalogTrail(
@@ -72,5 +78,6 @@ class CatalogTrail {
         criadoEmMs: ((m['criadoEmMs'] as num?) ?? 0).toInt(),
         lat: (m['lat'] as num?)?.toDouble(),
         lon: (m['lon'] as num?)?.toDouble(),
+        aprox: (m['aprox'] as bool?) ?? false,
       );
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import '../data/cordada_catalog.dart';
 import '../data/gear_catalog.dart';
 import '../geo/gpx_parser.dart';
 import '../geo/track_recorder.dart';
@@ -233,7 +234,7 @@ class ExpeditionState extends ChangeNotifier {
   static const depth = {
     'splash': 0, 'auth': 0, 'onboard': 1, 'home': 1, 'chat': 1, 'profile': 1, 'inv': 1,
     'ach': 2, 'history': 2, 'settings': 2, 'discover': 2, 'route': 2,
-    'plan': 2, 'watch': 2, 'relay': 2, 'publish': 3, 'party': 3, 'summary': 3, 'window': 3,
+    'plan': 2, 'watch': 2, 'relay': 2, 'cordadas': 2, 'publish': 3, 'party': 3, 'summary': 3, 'window': 3,
     'rankup': 4, 'pack': 4,
   };
 
@@ -244,6 +245,7 @@ class ExpeditionState extends ChangeNotifier {
     const toProfile = ['rankup', 'summary', 'settings', 'history', 'ach'];
     if (toHome.contains(screen)) return 'home';
     if (toProfile.contains(screen)) return 'profile';
+    if (screen == 'cordadas') return 'chat';
     return screen;
   }
 
@@ -346,6 +348,11 @@ class ExpeditionState extends ChangeNotifier {
       for (var i = 0; i + 1 < p.lastTrack.length; i += 2) GeoPoint(p.lastTrack[i], p.lastTrack[i + 1]),
     ];
     savedTrackKm = p.lastTrackKm;
+    cordadaId = p.cordadaId;
+    gpxTrailId = p.gpxTrailId;
+    gpxTrack = [
+      for (var i = 0; i + 1 < p.gpxTrack.length; i += 2) GeoPoint(p.gpxTrack[i], p.gpxTrack[i + 1]),
+    ];
     activeTrail = p.activeTrail.isEmpty
         ? trailCatalogSeed.first
         : CatalogTrail.fromMap((p.activeTrail['id'] as String?) ?? 'active', p.activeTrail);
@@ -393,6 +400,9 @@ class ExpeditionState extends ChangeNotifier {
       'favoriteGear': favoriteGear,
       'lastTrack': [for (final g in savedTrack) ...[g.lat, g.lon]],
       'lastTrackKm': savedTrackKm,
+      'cordadaId': cordadaId,
+      'gpxTrailId': gpxTrailId,
+      'gpxTrack': [for (final g in gpxTrack) ...[g.lat, g.lon]],
       'activeTrail': {'id': activeTrail.id, ...activeTrail.toMap()},
     }).catchError((_) {});
   }
@@ -605,6 +615,65 @@ class ExpeditionState extends ChangeNotifier {
       savedTrackKm = recorder.km;
       _syncProfile();
     }
+    notifyListeners();
+  }
+
+  // -------------------------------------------------------------- cordada
+
+  /// Cordada em que o usuário está ('' = nenhuma). DEMONSTRAÇÃO: integrantes
+  /// fictícios (ver cordada_catalog.dart) — não há convite nem conta real.
+  String cordadaId = 'sul';
+
+  Cordada? get cordada => cordadaPorId(cordadaId);
+
+  void entrarCordada(String id) {
+    if (cordadaPorId(id) == null) return;
+    cordadaId = id;
+    _syncProfile();
+    go('chat');
+  }
+
+  void sairCordada() {
+    cordadaId = '';
+    _syncProfile();
+    notifyListeners();
+  }
+
+  // ------------------------------------------------ traçado GPX importado
+
+  /// Traçado GPX que o usuário importou, e a trilha a que pertence.
+  String gpxTrailId = '';
+  List<GeoPoint> gpxTrack = const [];
+
+  /// O traçado importado só vale para a trilha para a qual foi importado.
+  List<GeoPoint> get activeGpx => gpxTrailId == activeTrail.id ? gpxTrack : const [];
+  double get activeGpxKm => trackLengthKm(activeGpx);
+
+  /// Lê um GPX e o associa à trilha em curso. Devolve uma mensagem de erro,
+  /// ou null se deu certo. Nunca inventa pontos: GPX sem trilha é recusado.
+  String? importGpx(String xml) {
+    final pts = parseGpx(xml);
+    if (pts.length < 2) return 'Não encontrei um traçado nesse arquivo (precisa de pontos <trkpt> ou <rtept>).';
+    const max = 800;
+    final out = <GeoPoint>[];
+    if (pts.length <= max) {
+      out.addAll(pts);
+    } else {
+      for (var i = 0; i < max; i++) {
+        out.add(pts[(i * (pts.length - 1) / (max - 1)).round()]);
+      }
+    }
+    gpxTrailId = activeTrail.id;
+    gpxTrack = out;
+    _syncProfile();
+    notifyListeners();
+    return null;
+  }
+
+  void removerGpx() {
+    gpxTrailId = '';
+    gpxTrack = const [];
+    _syncProfile();
     notifyListeners();
   }
 
