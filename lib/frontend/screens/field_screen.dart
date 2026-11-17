@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart' as ll;
 import '../app.dart';
+import '../../backend/state/expedition_calculator.dart';
 import '../../backend/state/expedition_state.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -21,24 +23,60 @@ class FieldScreen extends StatelessWidget {
       color: const Color(0xFF0B0C0E),
       child: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(18, 16, 18, 16),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                AppLabel('MODO CAMPO', color: AppColors.text3, size: 13, tracking: 0.26),
-                AppLabel('GPS · OFFLINE', color: AppColors.amber, size: 13, tracking: 0.16),
+                const AppLabel('MODO CAMPO', color: AppColors.text3, size: 13, tracking: 0.26),
+                // Estado real do GPS (antes dizia "OFFLINE" fixo, o que
+                // era falso: o mapa usa tiles online).
+                AppLabel(s.tracking ? 'GPS · LIGADO' : 'GPS · DESLIGADO',
+                    color: s.tracking ? AppColors.green : AppColors.amber, size: 13, tracking: 0.16),
               ],
             ),
           ),
           const Divider(color: AppColors.border, height: 1),
           Expanded(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Mesmo mapa da tela principal: trilha em curso, sua posição
+                  // e o traçado que o GPS está gravando.
+                  RouteMap(
+                    height: 230,
+                    labelTopLeft: 'MAPA · ${s.activeTrail.nome.toUpperCase()}',
+                    labelBottomRight: s.tracking ? 'AO VIVO' : 'GPS DESLIGADO',
+                    labelBottomRightColor: s.tracking ? AppColors.green : AppColors.amber,
+                    center: s.activeTrail.temLocal ? ll.LatLng(s.activeTrail.lat!, s.activeTrail.lon!) : null,
+                    trackAsset: s.activeTrail.id == 'seed-ruy-braga' ? 'assets/routes/ruy_braga.gpx' : null,
+                    recorded: [for (final p in s.shownTrack) ll.LatLng(p.lat, p.lon)],
+                    me: s.myPos == null ? null : ll.LatLng(s.myPos!.lat, s.myPos!.lon),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppButton(s.tracking ? 'PARAR GPS' : 'INICIAR GPS',
+                            onTap: s.tracking ? s.stopTracking : s.startTracking),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          s.locationError ??
+                              (s.tracking
+                                  ? '${fmtDec(s.shownTrackKm, 2)} km gravados'
+                                  : 'Toque para gravar o traçado'),
+                          style: AppTypography.body(
+                              size: 10,
+                              color: s.locationError != null ? AppColors.amber : AppColors.text2),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
                   const AppLabel('ALTITUDE', color: AppColors.text3, size: 12, tracking: 0.3),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
