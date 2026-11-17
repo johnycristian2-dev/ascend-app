@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:ascend/frontend/app.dart';
 import 'package:ascend/frontend/screens/chat_screen.dart';
 import 'package:ascend/frontend/screens/cordadas_screen.dart';
+import 'package:ascend/frontend/screens/friends_screen.dart';
+import 'package:ascend/frontend/screens/new_gear_screen.dart';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -112,5 +114,34 @@ void main() {
     await t.pump();
     expect(s.cordadaId, isNot('sul'));
     expect(s.cordada, isNotNull);
+  });
+
+  testWidgets('tela de amigos aceita pedido e leva a criar cordada', (t) async {
+    final s = await pump(t, const FriendsScreen());
+    expect(t.takeException(), isNull);
+    expect(find.text('PEDIDOS RECEBIDOS'), findsOneWidget);
+    await t.tap(find.text('ACEITAR').first);
+    await t.pump();
+    expect(s.friends.length, 4);
+    expect(find.text('CRIAR CORDADA COM AMIGOS'), findsOneWidget);
+  });
+
+  testWidgets('cadastro de equipamento aparece no inventário', (t) async {
+    final s = await pump(t, const NewGearScreen());
+    expect(t.takeException(), isNull);
+    await t.enterText(find.byType(TextField).first, 'Jaqueta teste');
+    await t.enterText(find.byType(TextField).at(2), '0,5');
+    await t.ensureVisible(find.text('SALVAR EQUIPAMENTO'));
+    await t.tap(find.text('SALVAR EQUIPAMENTO'));
+    await t.pump();
+    expect(s.customGear.single.nome, 'Jaqueta teste');
+    expect(s.screen, 'inv');
+  });
+
+  testWidgets('SOS aparece como mensagem destacada no chat da cordada', (t) async {
+    final s = await pump(t, const ChatScreen());
+    s.confirmSos();
+    await t.pump();
+    expect(find.textContaining('SOS ACIONADO'), findsOneWidget);
   });
 }

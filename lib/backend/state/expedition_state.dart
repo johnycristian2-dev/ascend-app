@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import '../data/cordada_catalog.dart';
+import '../data/friends_catalog.dart';
 import '../data/gear_catalog.dart';
 import '../geo/gpx_parser.dart';
 import '../geo/track_recorder.dart';
@@ -37,7 +38,8 @@ class ExpeditionState extends ChangeNotifier {
       ProfileRepository? profiles,
       RadioService? radioService,
       TrailRepository? trails,
-      LocationService? location})
+      LocationService? location,
+      this.friendAcceptDelay = const Duration(seconds: 2)})
       : auth = auth ?? AuthService(),
         profiles = profiles ?? ProfileRepository(),
         radioService = radioService ?? RadioService(),
@@ -53,10 +55,17 @@ class ExpeditionState extends ChangeNotifier {
   final LocationService location;
   final AudioPlayer _player = AudioPlayer();
 
+  /// Atraso até uma pessoa fictícia "aceitar" um pedido de amizade enviado.
+  final Duration friendAcceptDelay;
+  final List<Timer> _friendTimers = [];
+
   @override
   void dispose() {
     _fixSub?.cancel();
     _radioTimer?.cancel();
+    for (final t in _friendTimers) {
+      t.cancel();
+    }
     _player.dispose();
     radioService.dispose();
     super.dispose();
@@ -225,7 +234,7 @@ class ExpeditionState extends ChangeNotifier {
   GearUsage gearUsage(String id) {
     final logged = gear[id];
     if (logged != null) return logged;
-    final cat = gearData.firstWhere((g) => g.id == id);
+    final cat = todosEquip.firstWhere((g) => g.id == id);
     return GearUsage(uses: cat.uses, wear: cat.wear, od: cat.od);
   }
 
@@ -234,7 +243,7 @@ class ExpeditionState extends ChangeNotifier {
   static const depth = {
     'splash': 0, 'auth': 0, 'onboard': 1, 'home': 1, 'chat': 1, 'profile': 1, 'inv': 1,
     'ach': 2, 'history': 2, 'settings': 2, 'discover': 2, 'route': 2,
-    'plan': 2, 'watch': 2, 'relay': 2, 'cordadas': 2, 'publish': 3, 'party': 3, 'summary': 3, 'window': 3,
+    'plan': 2, 'watch': 2, 'relay': 2, 'cordadas': 2, 'friends': 2, 'novoEquip': 2, 'novaCordada': 3, 'publish': 3, 'party': 3, 'summary': 3, 'window': 3,
     'rankup': 4, 'pack': 4,
   };
 
@@ -245,7 +254,8 @@ class ExpeditionState extends ChangeNotifier {
     const toProfile = ['rankup', 'summary', 'settings', 'history', 'ach'];
     if (toHome.contains(screen)) return 'home';
     if (toProfile.contains(screen)) return 'profile';
-    if (screen == 'cordadas') return 'chat';
+    if (screen == 'novoEquip') return 'inv';
+    if (screen == 'cordadas' || screen == 'friends' || screen == 'novaCordada') return 'chat';
     return screen;
   }
 
@@ -349,6 +359,11 @@ class ExpeditionState extends ChangeNotifier {
     ];
     savedTrackKm = p.lastTrackKm;
     cordadaId = p.cordadaId;
+    friends = List.of(p.friends);
+    friendsIn = List.of(p.friendsIn);
+    friendsOut = List.of(p.friendsOut);
+    customCordadas = p.customCordadas.map(_cordadaDeMapa).whereType<Cordada>().toList();
+    customGear = p.customGear.map(GearItem.fromMap).whereType<GearItem>().toList();
     gpxTrailId = p.gpxTrailId;
     gpxTrack = [
       for (var i = 0; i + 1 < p.gpxTrack.length; i += 2) GeoPoint(p.gpxTrack[i], p.gpxTrack[i + 1]),
@@ -401,6 +416,19 @@ class ExpeditionState extends ChangeNotifier {
       'lastTrack': [for (final g in savedTrack) ...[g.lat, g.lon]],
       'lastTrackKm': savedTrackKm,
       'cordadaId': cordadaId,
+      'friends': friends,
+      'friendsIn': friendsIn,
+      'friendsOut': friendsOut,
+      'customCordadas': [
+        for (final c in customCordadas)
+          {
+            'id': c.id,
+            'nome': c.nome,
+            'trilha': c.trilha,
+            'membros': [for (final m in c.membrosIds) m],
+          }
+      ],
+      'customGear': [for (final g in customGear) g.toMap()],
       'gpxTrailId': gpxTrailId,
       'gpxTrack': [for (final g in gpxTrack) ...[g.lat, g.lon]],
       'activeTrail': {'id': activeTrail.id, ...activeTrail.toMap()},
@@ -516,7 +544,82 @@ class ExpeditionState extends ChangeNotifier {
 
   /// Chamado quando o gesto de "manter pressionado" completa 3 s. Não
   /// dispara nada de verdade — ver aviso na própria tela de SOS.
-  void confirmSos() { sosSent = true; notifyListeners(); }
+  void confirmSos() {
+    sosSent = true;
+    _postSos('SOS ACIONADO · preciso de ajuda. Posição enviada: 22°23\'S 44°40\'W, 2 421 m.');
+    notifyListeners();
+  }
+
+  /// Texto do SOS que foi para a cordada (mostrado também na tela de SOS).
+  String? get sosMessage {
+    for (final m in msgs.reversed) {
+      if (m.sos && m.me) return m.text;
+    }
+    return null;
+  }
+
+  /// Cancelar o alerta avisa a cordada de que está tudo bem.
+  void cancelSos() {
+    if (sosSent) _postSos('SOS CANCELADO · estou seguro.');
+    closeSos();
+  }
+
+  static String _agora() {
+    final n = DateTime.now();
+    return '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _postSos(String texto) {
+    msgs = [...msgs, Msg('VOCÊ', _agora(), texto, true, sos: true)];
+    _syncProfile();
+  }
+
+  // ---- equipamento cadastrado pelo usuário
+  List<GearItem> customGear = [];
+  List<GearItem> get todosEquip => [...gearData, ...customGear];
+
+  /// Cadastra uma peça. Devolve um texto de erro ou null.
+  String? cadastrarEquip({
+    required String nome,
+    required String categoria,
+    required String pesoKg,
+    String detalhe = '',
+    String limite = '',
+    bool emKm = false,
+  }) {
+    final n = nome.trim();
+    if (n.isEmpty) return 'Dê um nome à peça.';
+    final kg = double.tryParse(pesoKg.trim().replaceAll(',', '.'));
+    if (kg == null || kg < 0 || kg > 60) return 'Peso inválido (use kg, ex.: 1,2).';
+    final lim = int.tryParse(limite.trim()) ?? 50;
+    if (lim <= 0) return 'O limite de uso precisa ser maior que zero.';
+    final kgTxt = kg.toStringAsFixed(2).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '').replaceAll('.', ',');
+    final id = 'meu-${DateTime.now().microsecondsSinceEpoch}';
+    final spec = [if (detalhe.trim().isNotEmpty) detalhe.trim(), '$kgTxt kg'].join(' · ');
+    customGear = [
+      ...customGear,
+      GearItem.custom(
+          id: id, nome: n, spec: spec, tag: categoria, kg: kgTxt, lim: lim, unit: emKm ? 'km' : 'saídas'),
+    ];
+    gearSel = id;
+    _syncProfile();
+    notifyListeners();
+    return null;
+  }
+
+  void removerEquip(String id) {
+    customGear = customGear.where((g) => g.id != id).toList();
+    gear.remove(id);
+    if (gearSel == id) gearSel = null;
+    _syncProfile();
+    notifyListeners();
+  }
+
+  /// Enquanto true, todas as trilhas do catálogo ficam liberadas
+  /// independente do rank (pedido para a demonstração). Volte para false
+  /// para reativar o bloqueio por rank.
+  static const trilhasLiberadas = true;
+  bool trilhaBloqueada(CatalogTrail t) => !trilhasLiberadas && t.rankIdx > rankIdx;
 
   void toggleCarry(String nome) {
     packOut.contains(nome) ? packOut.remove(nome) : packOut.add(nome);
@@ -624,10 +727,97 @@ class ExpeditionState extends ChangeNotifier {
   /// fictícios (ver cordada_catalog.dart) — não há convite nem conta real.
   String cordadaId = 'sul';
 
-  Cordada? get cordada => cordadaPorId(cordadaId);
+  /// Cordadas montadas pelo usuário com seus amigos.
+  List<Cordada> customCordadas = [];
+
+  List<Cordada> get todasCordadas => [...cordadasDemo, ...customCordadas];
+
+  Cordada? get cordada {
+    for (final c in todasCordadas) {
+      if (c.id == cordadaId) return c;
+    }
+    return null;
+  }
+
+  Cordada? _cordadaDeMapa(Map<String, dynamic> m) {
+    final ids = ((m['membros'] as List?) ?? const []).map((e) => e as String).toList();
+    final membros = _membros(ids);
+    if (membros.isEmpty) return null;
+    return Cordada((m['id'] as String?) ?? 'c-x', (m['nome'] as String?) ?? 'MINHA CORDADA',
+        (m['trilha'] as String?) ?? '', 'Criada por você', membros,
+        membrosIds: ids);
+  }
+
+  List<CordadaMember> _membros(List<String> ids) =>
+      ids.map(pessoaPorId).whereType<Person>().map((p) => p.comoMembro()).toList();
+
+  /// Cria uma cordada só com amigos e já entra nela.
+  void criarCordada(String nome, List<String> amigos) {
+    final ids = [for (final id in amigos) if (friends.contains(id)) id];
+    if (ids.isEmpty) return;
+    final limpo = nome.trim().isEmpty ? 'MINHA CORDADA' : nome.trim().toUpperCase();
+    final c = Cordada('c-${DateTime.now().millisecondsSinceEpoch}', limpo, activeTrail.nome,
+        'Criada por você', _membros(ids),
+        membrosIds: ids);
+    customCordadas = [...customCordadas, c];
+    cordadaId = c.id;
+    _syncProfile();
+    go('chat');
+  }
+
+  // ---------------------------------------------------------------- amigos
+
+  /// DEMONSTRAÇÃO: pessoas fictícias (friends_catalog.dart). Os pedidos
+  /// enviados são "aceitos" sozinhos após [friendAcceptDelay], só para
+  /// mostrar o fluxo — não há ninguém do outro lado.
+  List<String> friends = ['kai', 'nina', 'teo'];
+  List<String> friendsIn = ['mai', 'bia'];
+  List<String> friendsOut = [];
+
+  bool ehAmigo(String id) => friends.contains(id);
+
+  void aceitarPedido(String id) {
+    if (!friendsIn.contains(id)) return;
+    friendsIn = [for (final x in friendsIn) if (x != id) x];
+    if (!friends.contains(id)) friends = [...friends, id];
+    _syncProfile();
+    notifyListeners();
+  }
+
+  void recusarPedido(String id) {
+    friendsIn = [for (final x in friendsIn) if (x != id) x];
+    _syncProfile();
+    notifyListeners();
+  }
+
+  void pedirAmizade(String id) {
+    if (pessoaPorId(id) == null || friends.contains(id) || friendsOut.contains(id)) return;
+    friendsOut = [...friendsOut, id];
+    _syncProfile();
+    notifyListeners();
+    _friendTimers.add(Timer(friendAcceptDelay, () {
+      if (!friendsOut.contains(id)) return; // cancelado
+      friendsOut = [for (final x in friendsOut) if (x != id) x];
+      friends = [...friends, id];
+      _syncProfile();
+      notifyListeners();
+    }));
+  }
+
+  void cancelarPedido(String id) {
+    friendsOut = [for (final x in friendsOut) if (x != id) x];
+    _syncProfile();
+    notifyListeners();
+  }
+
+  void removerAmigo(String id) {
+    friends = [for (final x in friends) if (x != id) x];
+    _syncProfile();
+    notifyListeners();
+  }
 
   void entrarCordada(String id) {
-    if (cordadaPorId(id) == null) return;
+    if (!todasCordadas.any((c) => c.id == id)) return;
     cordadaId = id;
     _syncProfile();
     go('chat');
@@ -805,7 +995,7 @@ class ExpeditionState extends ChangeNotifier {
   /// "REGISTRAR SAÍDA" na tela de equipamento — a única ação que muda
   /// uso/desgaste hoje (ver GearUsage.logOuting).
   void logGearOuting(String id) {
-    final unit = gearData.firstWhere((g) => g.id == id).unit;
+    final unit = todosEquip.firstWhere((g) => g.id == id).unit;
     gear[id] = gearUsage(id).logOuting(unit);
     _unlock('primeira_saida_equip');
     _syncProfile();
@@ -942,7 +1132,7 @@ class ExpeditionState extends ChangeNotifier {
 
   void send() {
     if (draft.trim().isEmpty) return;
-    msgs = [...msgs, Msg('VOCÊ', '08:31', draft.trim(), true)];
+    msgs = [...msgs, Msg('VOCÊ', _agora(), draft.trim(), true)];
     draft = '';
     _unlock('primeira_mensagem');
     _syncProfile();

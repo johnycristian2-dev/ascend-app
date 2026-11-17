@@ -18,7 +18,11 @@ class Cordada {
   final String trilha;
   final String descricao;
   final List<CordadaMember> membros;
-  const Cordada(this.id, this.nome, this.trilha, this.descricao, this.membros);
+
+  /// Ids dos amigos (só nas cordadas montadas pelo usuário).
+  final List<String> membrosIds;
+  const Cordada(this.id, this.nome, this.trilha, this.descricao, this.membros,
+      {this.membrosIds = const []});
 }
 
 /// Cordadas de demonstração. O usuário entra como mais um integrante.

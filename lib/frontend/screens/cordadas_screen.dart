@@ -23,10 +23,14 @@ class CordadasScreen extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 26),
             children: [
-              for (final cd in cordadasDemo) ...[
+              for (final cd in s.todasCordadas) ...[
                 _CordadaCard(cd, atual: s.cordadaId == cd.id),
                 const SizedBox(height: 10),
               ],
+              AppButton('CRIAR CORDADA COM AMIGOS', onTap: () => s.go('novaCordada'), primary: true),
+              const SizedBox(height: 8),
+              AppButton('AMIGOS', onTap: () => s.go('friends')),
+              const SizedBox(height: 8),
               if (s.cordadaId.isNotEmpty)
                 AppButton('SAIR DA CORDADA ATUAL', onTap: () {
                   s.sairCordada();

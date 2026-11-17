@@ -3,7 +3,6 @@ import '../app.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../widgets/widgets.dart';
-import '../../backend/data/gear_catalog.dart';
 
 /// Equipamento: odômetro real de cada peça e o que ela pede de manutenção.
 class InventoryScreen extends StatelessWidget {
@@ -14,11 +13,14 @@ class InventoryScreen extends StatelessWidget {
     final s = Expedition.of(c);
     return Column(
       children: [
-        ScreenBar('EQUIPAMENTO', sub: '${gearData.length} peças registradas'),
+        ScreenBar('EQUIPAMENTO', sub: '${s.todosEquip.length} peças registradas'),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 26),
-            children: gearData.map((g) {
+            children: [
+              AppButton('CADASTRAR EQUIPAMENTO', onTap: () => s.go('novoEquip'), primary: true),
+              const SizedBox(height: 10),
+              ...s.todosEquip.map((g) {
               final sel = s.gearSel == g.id;
               final usage = s.gearUsage(g.id);
               final ink = usage.wear > 65
@@ -72,12 +74,17 @@ class InventoryScreen extends StatelessWidget {
                         TwoColumnRow('PESO', '${g.kg} kg'),
                         const SizedBox(height: 10),
                         AppButton('REGISTRAR SAÍDA', onTap: () => s.logGearOuting(g.id)),
+                        if (g.id.startsWith('meu-')) ...[
+                          const SizedBox(height: 8),
+                          AppButton('REMOVER DO MEU EQUIPAMENTO', onTap: () => s.removerEquip(g.id)),
+                        ],
                       ],
                     ],
                   ),
                 ),
               );
-            }).toList(),
+              }),
+            ],
           ),
         ),
       ],

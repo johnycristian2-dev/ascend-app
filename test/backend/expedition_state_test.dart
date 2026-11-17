@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ascend/backend/services/auth_service.dart';
 import 'package:ascend/backend/services/profile_repository.dart';
 import 'package:ascend/backend/data/trail_catalog.dart';
+import 'package:ascend/backend/data/cordada_catalog.dart';
+import 'package:ascend/backend/data/gear_catalog.dart';
 import 'package:ascend/backend/models/catalog_trail_model.dart';
 import 'package:ascend/backend/geo/gpx_parser.dart';
 import 'package:ascend/backend/services/location_service.dart';
@@ -246,6 +248,91 @@ void main() {
           id: 'a', nome: 'N', rankIdx: 0, km: 1, ganhoM: 1, duracao: '', lat: -25.1, lon: -48.2);
       final r = CatalogTrail.fromMap('a', t.toMap());
       expect((r.lat, r.lon, r.temLocal), (-25.1, -48.2, true));
+    });
+  });
+
+  group('amigos, SOS, equipamento e trilhas (demonstração)', () {
+    test('aceitar pedido vira amigo; recusar some; pedir é aceito sozinho', () async {
+      final s = ExpeditionState(
+          location: _FakeLocation(),
+          auth: _FakeAuth(),
+          profiles: _FakeProfiles(),
+          radioService: _FakeRadio(),
+          trails: _FakeTrails(),
+          friendAcceptDelay: const Duration(milliseconds: 10));
+      s.aceitarPedido('mai');
+      expect(s.ehAmigo('mai'), isTrue);
+      s.recusarPedido('bia');
+      expect(s.friendsIn, isEmpty);
+      s.pedirAmizade('leo');
+      expect(s.friendsOut, ['leo']);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(s.ehAmigo('leo'), isTrue);
+      expect(s.friendsOut, isEmpty);
+      s.pedirAmizade('ian');
+      s.cancelarPedido('ian');
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(s.ehAmigo('ian'), isFalse);
+      s.removerAmigo('kai');
+      expect(s.ehAmigo('kai'), isFalse);
+      s.dispose();
+    });
+
+    test('criar cordada só com amigos e entrar nela', () {
+      final s = _novoEstado();
+      s.criarCordada('Sexta no Paraná', ['kai', 'nina', 'oto']); // oto não é amigo
+      expect(s.cordada?.nome, 'SEXTA NO PARANÁ');
+      expect(s.cordada!.membrosIds, ['kai', 'nina']);
+      expect(s.todasCordadas.length, cordadasDemo.length + 1);
+      s.dispose();
+    });
+
+    test('SOS posta mensagem na cordada; cancelar avisa que está seguro', () {
+      final s = _novoEstado();
+      final antes = s.msgs.length;
+      s.openSos();
+      s.confirmSos();
+      expect(s.msgs.length, antes + 1);
+      expect(s.msgs.last.sos, isTrue);
+      expect(s.msgs.last.me, isTrue);
+      expect(s.sosMessage, contains('SOS ACIONADO'));
+      s.cancelSos();
+      expect(s.msgs.last.text, contains('SOS CANCELADO'));
+      expect(s.sosOpen, isFalse);
+      // round-trip do flag
+      expect(Msg.fromMap(s.msgs.last.toMap()).sos, isTrue);
+      s.dispose();
+    });
+
+    test('todas as trilhas ficam liberadas independente do rank', () {
+      final s = _novoEstado();
+      s.rankIdx = 0;
+      for (final t in s.catalog) {
+        expect(s.trilhaBloqueada(t), isFalse);
+      }
+      s.dispose();
+    });
+
+    test('cadastrar equipamento valida, lista, registra saída e remove', () {
+      final s = _novoEstado();
+      expect(s.cadastrarEquip(nome: '', categoria: 'BASE', pesoKg: '1'), isNotNull);
+      expect(s.cadastrarEquip(nome: 'X', categoria: 'BASE', pesoKg: 'abc'), isNotNull);
+      final base = s.todosEquip.length;
+      expect(
+          s.cadastrarEquip(nome: 'Jaqueta', categoria: 'ABRIGO', pesoKg: '0,45', limite: '30'), isNull);
+      expect(s.todosEquip.length, base + 1);
+      final g = s.customGear.single;
+      expect(g.kg, '0,45');
+      expect(s.gearUsage(g.id).uses, 0);
+      s.logGearOuting(g.id);
+      expect(s.gearUsage(g.id).uses, 1);
+      // persistência: toMap/fromMap
+      final volta = GearItem.fromMap(g.toMap())!;
+      expect(volta.nome, 'Jaqueta');
+      expect(volta.lim, 30);
+      s.removerEquip(g.id);
+      expect(s.todosEquip.length, base);
+      s.dispose();
     });
   });
 

@@ -86,7 +86,7 @@ class _SosScreenState extends State<SosScreen> {
                   InkWell(
                     onTap: () {
                       _cancelHold();
-                      s.closeSos();
+                      s.cancelSos();
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -134,7 +134,37 @@ class _SosScreenState extends State<SosScreen> {
                   Text('ENVIAR PARA',
                       style: AppTypography.label(size: 10, color: _SosInk.textMuted, tracking: 0.24)),
                   const SizedBox(height: 9),
-                  ...sosContacts.map((ct) => Container(
+                  if (s.sosSent && s.sosMessage != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: _SosInk.surface,
+                        border: Border.all(color: AppColors.amber),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('MENSAGEM ENVIADA NA CORDADA',
+                              style: AppTypography.label(size: 9, color: AppColors.amber, tracking: 0.2)),
+                          const SizedBox(height: 6),
+                          Text(s.sosMessage!,
+                              style: AppTypography.body(size: 12, color: _SosInk.textLight)),
+                        ],
+                      ),
+                    ),
+                  ],
+                  ...sosContacts
+                      .map((ct) => ct.name == 'CORDADA SUL'
+                          ? (s.cordada == null
+                              ? null
+                              : SosContact(s.cordada!.nome.toUpperCase(),
+                                  '${s.cordada!.membros.length + 1} integrantes', ct.via, ct.dotInk))
+                          : ct)
+                      .whereType<SosContact>()
+                      .map((ct) => Container(
                         margin: const EdgeInsets.only(bottom: 7),
                         padding: const EdgeInsets.all(11),
                         decoration: BoxDecoration(
@@ -183,7 +213,7 @@ class _SosScreenState extends State<SosScreen> {
             ),
             if (s.sosSent)
               InkWell(
-                onTap: s.closeSos,
+                onTap: s.cancelSos,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 30),

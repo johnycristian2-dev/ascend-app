@@ -55,7 +55,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   ),
                 ),
               ...items.map((t) {
-                final locked = t.rankIdx > s.rankIdx;
+                final locked = s.trilhaBloqueada(t);
                 final km = t.km.toStringAsFixed(1).replaceAll('.', ',');
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
