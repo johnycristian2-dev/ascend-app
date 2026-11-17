@@ -36,6 +36,16 @@ class HomeScreen extends StatelessWidget {
                       '${fmtDec(s.activeKm)} km · +${fmtMil(s.activeM)} m'
                       '${s.activeTrail.duracao.isEmpty ? '' : ' · ${s.activeTrail.duracao}'}',
                       style: AppTypography.body(size: 10, color: AppColors.text3)),
+                  const SizedBox(height: 6),
+                  // Atalho visível para escolher outra trilha (antes só havia
+                  // o botão no fim da tela).
+                  InkWell(
+                    onTap: () => s.go('discover'),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4),
+                      child: AppLabel('TROCAR TRILHA ›', color: AppColors.amber, size: 9, tracking: 0.2),
+                    ),
+                  ),
                 ],
               ),
             ),
