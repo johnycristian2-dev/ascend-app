@@ -8,13 +8,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ascend/backend/services/auth_service.dart';
 import 'package:ascend/backend/services/profile_repository.dart';
-import 'package:ascend/backend/data/trail_catalog.dart';
 import 'package:ascend/backend/models/catalog_trail_model.dart';
-import 'package:ascend/backend/geo/gpx_parser.dart';
 import 'package:ascend/backend/services/location_service.dart';
 import 'package:ascend/backend/services/radio_service.dart';
 import 'package:ascend/backend/services/trail_repository.dart';
-import 'package:ascend/backend/state/expedition_calculator.dart';
 import 'package:ascend/backend/state/expedition_state.dart';
 
 // Dublês que não tocam em Firebase nem no microfone: o estado só os usa
