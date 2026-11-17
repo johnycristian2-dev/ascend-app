@@ -243,11 +243,11 @@ class _EmptyHome extends StatelessWidget {
           Text('O mapa começa vazio.', style: AppTypography.num(size: 26, color: AppColors.text)),
           const SizedBox(height: 10),
           Text(
-            'Escolha uma trilha do seu rank ou entre na cordada de alguém. O registro começa na primeira saída.',
+            'Escolha uma trilha ou entre na cordada de alguém. O registro começa na primeira saída.',
             style: AppTypography.body(size: 11),
           ),
           const SizedBox(height: 20),
-          AppButton('VER TRILHAS DO MEU RANK',
+          AppButton('VER TRILHAS',
               onTap: () => s.go('discover'), primary: true),
           const SizedBox(height: 8),
           AppButton('PLANEJAR EXPEDIÇÃO', onTap: () => s.go('plan')),

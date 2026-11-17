@@ -34,6 +34,9 @@ class ChatScreen extends StatelessWidget {
                   Expanded(child: AppButton('SAIR DA CORDADA', onTap: s.sairCordada)),
                 ],
               ),
+              const SizedBox(height: 8),
+              AppButton('AMIGOS${s.friendsIn.isEmpty ? '' : ' · ${s.friendsIn.length} PEDIDO(S)'}',
+                  onTap: () => s.go('friends')),
               const SizedBox(height: 12),
               ...msgs.map((m) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
@@ -42,15 +45,19 @@ class ChatScreen extends StatelessWidget {
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 260),
                         child: AppPanel(
-                          bg: m.me ? AppColors.raised : AppColors.surface,
-                          borderColor: m.me ? AppColors.borderRaised : AppColors.border,
+                          bg: m.sos ? AppColors.bgWarn : (m.me ? AppColors.raised : AppColors.surface),
+                          borderColor: m.sos ? AppColors.amber : (m.me ? AppColors.borderRaised : AppColors.border),
                           padding: const EdgeInsets.all(11),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  AppLabel(m.who, color: AppColors.text3, size: 8, tracking: 0.16),
+                                  if (m.sos) ...[
+                                    const Icon(Icons.warning_amber_rounded, size: 11, color: AppColors.amber),
+                                    const SizedBox(width: 4),
+                                  ],
+                                  AppLabel(m.who, color: m.sos ? AppColors.amber : AppColors.text3, size: 8, tracking: 0.16),
                                   const SizedBox(width: 7),
                                   Text(m.time, style: AppTypography.body(size: 8.5, color: AppColors.dim)),
                                 ],
@@ -231,6 +238,8 @@ class _SemCordada extends StatelessWidget {
                     style: AppTypography.body(size: 11)),
                 const SizedBox(height: 20),
                 AppButton('VER CORDADAS', onTap: () => s.go('cordadas'), primary: true),
+                const SizedBox(height: 8),
+                AppButton('AMIGOS', onTap: () => s.go('friends')),
               ],
             ),
           ),

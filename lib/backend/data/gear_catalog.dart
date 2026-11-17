@@ -20,6 +20,40 @@ class GearItem {
     required this.svcAt,
     required this.wearNote,
   });
+
+  /// Peça cadastrada pelo usuário (não vem do catálogo): começa sem uso.
+  factory GearItem.custom({
+    required String id,
+    required String nome,
+    required String spec,
+    required String tag,
+    required String kg,
+    required int lim,
+    required String unit,
+  }) =>
+      GearItem(
+          id: id, nome: nome, spec: spec, tag: tag,
+          tagInk: tag == 'TÉCNICO' ? 0 : tag == 'SEGURANÇA' ? 1 : tag == 'ABRIGO' ? 3 : 2,
+          kg: kg, uses: 0, wear: 0, od: 0, lim: lim, unit: unit,
+          svc: 'em dia', svcAt: 'defina a revisão conforme o fabricante',
+          wearNote: 'Peça cadastrada por você. O desgaste cresce a cada saída registrada.');
+
+  Map<String, dynamic> toMap() =>
+      {'id': id, 'nome': nome, 'spec': spec, 'tag': tag, 'kg': kg, 'lim': lim, 'unit': unit};
+
+  static GearItem? fromMap(Map m) {
+    final id = m['id'], nome = m['nome'];
+    if (id is! String || nome is! String) return null;
+    return GearItem.custom(
+      id: id,
+      nome: nome,
+      spec: (m['spec'] as String?) ?? '',
+      tag: (m['tag'] as String?) ?? 'BASE',
+      kg: (m['kg'] as String?) ?? '0',
+      lim: (m['lim'] as num?)?.toInt() ?? 50,
+      unit: (m['unit'] as String?) ?? 'saídas',
+    );
+  }
 }
 
 const gearData = <GearItem>[

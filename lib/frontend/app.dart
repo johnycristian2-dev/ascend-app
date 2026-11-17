@@ -20,6 +20,9 @@ import 'screens/party_screen.dart';
 import 'screens/watch_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/cordadas_screen.dart';
+import 'screens/friends_screen.dart';
+import 'screens/new_gear_screen.dart';
+import 'screens/new_cordada_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/achievements_screen.dart';
@@ -150,6 +153,9 @@ class Shell extends StatelessWidget {
         'watch' => const WatchScreen(),
         'chat' => const ChatScreen(),
         'cordadas' => const CordadasScreen(),
+        'friends' => const FriendsScreen(),
+        'novoEquip' => const NewGearScreen(),
+        'novaCordada' => const NewCordadaScreen(),
         'profile' => const ProfileScreen(),
         'inv' => const InventoryScreen(),
         'ach' => const AchievementsScreen(),

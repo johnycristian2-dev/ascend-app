@@ -115,6 +115,16 @@ class UserProfile {
   /// `cordada_catalog.dart`.
   final String cordadaId;
 
+  /// Amigos (ids de `friends_catalog.dart`), pedidos recebidos e enviados,
+  /// e cordadas montadas pelo usuário. Demonstração: pessoas fictícias.
+  final List<String> friends;
+  final List<String> friendsIn;
+  final List<String> friendsOut;
+  final List<Map<String, dynamic>> customCordadas;
+
+  /// Equipamentos cadastrados pelo usuário (ver GearItem.toMap).
+  final List<Map<String, dynamic>> customGear;
+
   /// Traçado GPX importado pelo usuário para a trilha `gpxTrailId` (lat,lon
   /// alternados), no máximo 800 pontos.
   final String gpxTrailId;
@@ -158,6 +168,11 @@ class UserProfile {
     this.lastTrack = const [],
     this.lastTrackKm = 0,
     this.cordadaId = 'sul',
+    this.friends = const ['kai', 'nina', 'teo'],
+    this.friendsIn = const ['mai', 'bia'],
+    this.friendsOut = const [],
+    this.customCordadas = const [],
+    this.customGear = const [],
     this.gpxTrailId = '',
     this.gpxTrack = const [],
     this.activeTrail = const {},
@@ -226,6 +241,11 @@ class UserProfile {
     List<double>? lastTrack,
     double? lastTrackKm,
     String? cordadaId,
+    List<String>? friends,
+    List<String>? friendsIn,
+    List<String>? friendsOut,
+    List<Map<String, dynamic>>? customCordadas,
+    List<Map<String, dynamic>>? customGear,
     String? gpxTrailId,
     List<double>? gpxTrack,
     Map<String, dynamic>? activeTrail,
@@ -265,6 +285,11 @@ class UserProfile {
         lastTrack: lastTrack ?? this.lastTrack,
         lastTrackKm: lastTrackKm ?? this.lastTrackKm,
         cordadaId: cordadaId ?? this.cordadaId,
+        friends: friends ?? this.friends,
+        friendsIn: friendsIn ?? this.friendsIn,
+        friendsOut: friendsOut ?? this.friendsOut,
+        customCordadas: customCordadas ?? this.customCordadas,
+        customGear: customGear ?? this.customGear,
         gpxTrailId: gpxTrailId ?? this.gpxTrailId,
         gpxTrack: gpxTrack ?? this.gpxTrack,
         activeTrail: activeTrail ?? this.activeTrail,
@@ -304,6 +329,11 @@ class UserProfile {
         'lastTrack': lastTrack,
         'lastTrackKm': lastTrackKm,
         'cordadaId': cordadaId,
+        'friends': friends,
+        'friendsIn': friendsIn,
+        'friendsOut': friendsOut,
+        'customCordadas': customCordadas,
+        'customGear': customGear,
         'gpxTrailId': gpxTrailId,
         'gpxTrack': gpxTrack,
         'activeTrail': activeTrail,
@@ -367,6 +397,17 @@ class UserProfile {
         lastTrack: (m['lastTrack'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? const [],
         lastTrackKm: ((m['lastTrackKm'] as num?) ?? 0).toDouble(),
         cordadaId: (m['cordadaId'] as String?) ?? 'sul',
+        friends: (m['friends'] as List?)?.map((e) => e as String).toList() ?? const ['kai', 'nina', 'teo'],
+        friendsIn: (m['friendsIn'] as List?)?.map((e) => e as String).toList() ?? const ['mai', 'bia'],
+        friendsOut: (m['friendsOut'] as List?)?.map((e) => e as String).toList() ?? const [],
+        customCordadas: (m['customCordadas'] as List?)
+                ?.map((e) => Map<String, dynamic>.from(e as Map))
+                .toList() ??
+            const [],
+        customGear: (m['customGear'] as List?)
+                ?.map((e) => Map<String, dynamic>.from(e as Map))
+                .toList() ??
+            const [],
         gpxTrailId: (m['gpxTrailId'] as String?) ?? '',
         gpxTrack: (m['gpxTrack'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? const [],
         activeTrail: (m['activeTrail'] as Map?)?.map((k, v) => MapEntry(k as String, v)) ?? const {},
